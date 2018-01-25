@@ -6,10 +6,10 @@ from openmdao.api import Group, IndepVarComp
 
 from pointer.ode_function import ODEFunction
 
-from ...models.atmosphere import StandardAtmosphereGroup
+from pointer.models.atmosphere import StandardAtmosphereGroup
 from .aero import AeroGroup
 from .prop import PropGroup
-from ...models.eom import FlightPathEOM2D
+from pointer.models.eom import FlightPathEOM2D
 
 
 class MinTimeClimbODE(ODEFunction):

@@ -6,7 +6,7 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 from pointer import PhaseLinkageComp
 from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 
-from pointer.examples.min_time_climb_2d.min_time_climb_ode import MinTimeClimbODE
+from path_dependent_missions.escort.min_time_climb_ode import MinTimeClimbODE
 
 _phase_map = {'gauss-lobatto': GaussLobattoPhase,
               'radau-ps': RadauPseudospectralPhase}

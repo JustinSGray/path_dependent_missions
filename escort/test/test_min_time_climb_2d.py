@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-from pointer.examples.min_time_climb_2d.min_time_climb_problem import min_time_climb_problem
+from path_dependent_missions.escort.min_time_climb_problem import min_time_climb_problem
 
 SHOW_PLOTS = False
 

@@ -5,7 +5,7 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 
 from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 
-from pointer.examples.min_time_climb_2d.min_time_climb_ode import MinTimeClimbODE
+from path_dependent_missions.escort.min_time_climb_ode import MinTimeClimbODE
 
 _phase_map = {'gauss-lobatto': GaussLobattoPhase,
               'radau-ps': RadauPseudospectralPhase}
@@ -26,7 +26,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
-        p.driver.opt_settings['Verify level'] = 3
+        p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
         p.driver.opt_settings['Major step limit'] = 0.5
@@ -106,9 +106,10 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(optimizer='SNOPT', num_seg=20, transcription_order=3)
+    p = min_time_climb_problem(optimizer='SNOPT', num_seg=6, transcription_order=3, mbi_thrust=True, transcription='radau-ps')
     from openmdao.api import view_model
-    # view_model(p)
+    view_model(p)
+    exit()
     p.run_model()
     p.run_driver()
 
