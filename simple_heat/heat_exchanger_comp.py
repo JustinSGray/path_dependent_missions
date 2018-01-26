@@ -19,5 +19,4 @@ class HeatExchangerComp(ExplicitComponent):
         self.declare_partials('*', '*', method='fd')
 
     def compute(self, inputs, outputs):
-        T_0 = self.q_sink / (inputs['m_dot'] * self.Cv) + inputs['T']
-        outputs['T_0'] = T_0
+        outputs['T_0'] = -self.q_sink / (inputs['m_dot'] * self.Cv) + inputs['T']

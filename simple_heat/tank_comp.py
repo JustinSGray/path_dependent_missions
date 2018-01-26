@@ -22,7 +22,5 @@ class TankComp(ExplicitComponent):
         self.declare_partials('*', '*', method='fd')
 
     def compute(self, inputs, outputs):
-        delta_T = 20
-        # T_0 = self.q_env / (inputs['m_dot'] * self.Cv) + inputs['T']
-
         outputs['m_dot'] = -inputs['m_flow']
+        outputs['T_dot'] = 0.
