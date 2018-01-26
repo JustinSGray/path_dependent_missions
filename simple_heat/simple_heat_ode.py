@@ -37,7 +37,7 @@ class SimpleHeatSystem(Group):
                            promotes=['m', 'm_flow', 'm_dot', 'T', 'T_dot'])
 
         self.add_subsystem(name='heat_exchanger_pre',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=2.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=15.),
                            promotes=[])
 
         self.add_subsystem(name='fuel_burner',
@@ -45,7 +45,7 @@ class SimpleHeatSystem(Group):
                            promotes=['m_burn'])
 
         self.add_subsystem(name='heat_exchanger_post',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=-2.5),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=-5.),
                            promotes=[])
 
         # Tank to HX1

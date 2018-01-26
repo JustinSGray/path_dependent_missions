@@ -21,7 +21,7 @@ class TankComp(ExplicitComponent):
         self.add_output('T_out', shape=self.nn, units='K')
 
         self.Cv = 1.
-        self.q_env = 10.
+        self.q_env = 0.
 
         self.ar = ar = np.arange(self.nn)
         self.declare_partials('T_out', 'T', val=1., rows=ar, cols=ar)
@@ -35,11 +35,13 @@ class TankComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['m_dot'] = inputs['m_in'] - inputs['m_flow']
-        outputs['T_dot'] = self.q_env / (inputs['m'] * self.Cv) + inputs['T_in'] * inputs['m_in'] / inputs['m']
-        outputs['T_out'] = inputs['T']
         outputs['m_out'] = inputs['m_flow']
+
+        outputs['T_dot'] = self.q_env / (inputs['m'] * self.Cv) + (inputs['T_in'] - inputs['T']) * inputs['m_in'] / inputs['m']
+        outputs['T_out'] = inputs['T']
 
     def compute_partials(self, inputs, partials):
         partials['T_dot', 'T_in'] = inputs['m_in'] / inputs['m']
-        partials['T_dot', 'm_in'] = inputs['T_in'] / inputs['m']
+        partials['T_dot', 'T_in'] = -inputs['m_in'] / inputs['m']
+        partials['T_dot', 'm_in'] = (inputs['T_in'] - inputs['T']) / inputs['m']
         partials['T_dot', 'm'] = -inputs['T_in'] * inputs['m_in'] / inputs['m']**2 - self.q_env / (inputs['m']**2 * self.Cv)
