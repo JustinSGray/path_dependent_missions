@@ -23,4 +23,4 @@ class TankComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['m_dot'] = -inputs['m_flow']
-        outputs['T_dot'] = 0.
+        outputs['T_dot'] = self.q_env / (inputs['m'] * self.Cv)
