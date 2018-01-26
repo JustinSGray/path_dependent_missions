@@ -1,3 +1,4 @@
+import numpy as np
 from openmdao.api import ExplicitComponent
 
 # TODO: see if this is actually needed. Currently it prevents numerical issues
@@ -20,7 +21,12 @@ class HeatExchangerComp(ExplicitComponent):
 
         self.Cv = 1.
 
-        self.declare_partials('*', '*', method='fd')
+        self.ar = ar = np.arange(self.nn)
+        self.declare_partials('T_out', 'T_in', val=1., rows=ar, cols=ar)
+        self.declare_partials('T_out', 'm_in', dependent=True, rows=ar, cols=ar)
 
     def compute(self, inputs, outputs):
         outputs['T_out'] = self.q / (inputs['m_in'] * self.Cv + tol) + inputs['T_in']
+
+    def compute_partials(self, inputs, partials):
+        partials['T_out', 'm_in'] = -self.Cv * self.q / (self.Cv * inputs['m_in'] + tol)**2

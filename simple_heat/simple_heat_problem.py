@@ -38,12 +38,11 @@ p.setup(check=True)
 p['phase.states:m'] = phase.interpolate(ys=[10, 1], nodes='disc')
 p['phase.states:T'] = phase.interpolate(ys=[.5, 1.5], nodes='disc')
 
-if 0:
+if 1:
     p.run_model()
     p.model.phase.simulate()
 else:
     p.run_driver()
-
 
 m = p.model.phase.get_values('m', nodes='all')
 time = p.model.phase.get_values('time', nodes='all')

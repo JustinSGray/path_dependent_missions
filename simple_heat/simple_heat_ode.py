@@ -77,5 +77,6 @@ if __name__ == "__main__":
 
     p.setup(check=True)
     p.run_model()
+    p.check_partials(compact_print=True)
 
-    view_model(p)
+    # view_model(p)
