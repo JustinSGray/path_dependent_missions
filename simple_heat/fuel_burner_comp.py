@@ -20,3 +20,4 @@ class FuelBurnerComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['m_recirculated'] = inputs['m_in'] - inputs['m_burn']
+        print('m_burn', inputs['m_burn'])

@@ -17,7 +17,7 @@ p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
 p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
 p.driver.opt_settings['Verify level'] = -1
 
-phase = RadauPseudospectralPhase(ode_function=SimpleHeatODE(), num_segments=4, transcription_order=1, compressed=False)
+phase = RadauPseudospectralPhase(ode_function=SimpleHeatODE(), num_segments=2, transcription_order=1, compressed=False)
 
 phase.set_time_options(opt_initial=False, opt_duration=False)
 
@@ -25,10 +25,10 @@ phase.set_state_options('m', lower=1., upper=10.)
 phase.set_state_options('T', fix_initial=True)
 phase.set_objective('m', loc='final', scaler=-1.)
 
-phase.add_control('m_flow', opt=True, val=1., lower=.1, dynamic=True)
-phase.add_control('m_burn', opt=True, val=0.1, dynamic=True)
+phase.add_control('m_flow', opt=True, val=1., lower=.2, dynamic=False)
+phase.add_control('m_burn', opt=True, val=0.15, dynamic=True)
 phase.add_path_constraint('T', upper=1.)
-# phase.add_path_constraint('fuel_burner.m_recirculated', lower=0., upper=0.)
+phase.add_path_constraint('fuel_burner.m_recirculated', lower=0.)
 # phase.add_path_constraint('T_0', upper=1.)
 
 p.model.add_subsystem('phase', phase)
@@ -36,11 +36,15 @@ p.model.add_subsystem('phase', phase)
 p.setup(check=True)
 
 p['phase.states:m'] = phase.interpolate(ys=[10, 1], nodes='disc')
-p['phase.states:T'] = phase.interpolate(ys=[0.1, 0.], nodes='disc')
+p['phase.states:T'] = phase.interpolate(ys=[0.95, 0.], nodes='disc')
 
 if 0:
     p.run_model()
     # p.model.phase.simulate()
+    p.check_partials(compact_print=True)
+
+    from openmdao.api import view_model
+    view_model(p)
 else:
     p.run_driver()
 

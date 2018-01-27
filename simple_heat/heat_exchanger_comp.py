@@ -27,6 +27,7 @@ class HeatExchangerComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['T_out'] = self.q / (inputs['m_in'] * self.Cv + tol) + inputs['T_in']
+        print(self.name, inputs['T_in'], outputs['T_out'])
 
     def compute_partials(self, inputs, partials):
         partials['T_out', 'm_in'] = -self.Cv * self.q / (self.Cv * inputs['m_in'] + tol)**2
