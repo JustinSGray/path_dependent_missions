@@ -11,11 +11,10 @@ class PowerComp(ExplicitComponent):
         self.nn = self.metadata['num_nodes']
 
         self.add_input('m_flow', shape=self.nn, units='kg/s')
-        self.add_output('power')
+        self.add_output('power', shape=self.nn, units='W')
 
         self.ar = ar = np.arange(self.nn)
-        self.declare_partials('power', 'm_flow', val=1., rows=[0]*self.nn, cols=ar)
+        self.declare_partials('power', 'm_flow', val=1., rows=ar, cols=ar)
 
     def compute(self, inputs, outputs):
-        outputs['power'] = np.sum(inputs['m_flow'])
-        print('power', inputs['m_flow'], outputs['power'])
+        outputs['power'] = inputs['m_flow']

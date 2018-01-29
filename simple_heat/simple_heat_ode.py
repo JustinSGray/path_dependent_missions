@@ -20,6 +20,7 @@ class SimpleHeatODE(ODEFunction):
 
         self.declare_state('m', units='kg', rate_source='m_dot', targets=['m'])
         self.declare_state('T', units='K', rate_source='T_dot', targets=['T'])
+        self.declare_state('energy', units='J', rate_source='power')
 
         self.declare_parameter('m_flow', targets=['m_flow'], units='kg/s')
         self.declare_parameter('m_burn', targets=['m_burn'], units='kg/s')
@@ -71,14 +72,20 @@ class SimpleHeatSystem(Group):
         self.connect('fuel_burner.m_recirculated', 'tank.m_in')
 
         self.nonlinear_solver = NonlinearBlockGS()
-        self.nonlinear_solver.options['iprint'] = 2
+        # self.nonlinear_solver.options['iprint'] = 2
 
 if __name__ == "__main__":
-    from openmdao.api import Problem, view_model
+    from openmdao.api import Problem, view_model, IndepVarComp
 
-    p = Problem()
+    nn = 3
 
-    p.model = SimpleHeatSystem(num_nodes=5)
+    p = Problem(model=Group())
+
+    p.model.add_subsystem('SHS', SimpleHeatSystem(num_nodes=nn), promotes=['*'])
+
+    ivc = IndepVarComp()
+    ivc.add_output('m_flow', shape=nn, val=np.linspace(0, 2, nn))
+    p.model.add_subsystem('ivc', ivc, promotes=['*'])
 
     p.setup(check=True)
     p.run_model()

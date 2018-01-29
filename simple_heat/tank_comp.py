@@ -41,7 +41,6 @@ class TankComp(ExplicitComponent):
 
         heat_input = self.q / (inputs['m'] * self.Cv)
         temp_input = (inputs['T_in'] - inputs['T']) * inputs['m_in'] / inputs['m']
-        print(self.name, heat_input, temp_input)
         outputs['T_dot'] = heat_input + temp_input
         outputs['T_out'] = inputs['T']
 
