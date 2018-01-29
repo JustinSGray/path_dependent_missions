@@ -51,7 +51,7 @@ class SimpleHeatSystem(Group):
 
         self.add_subsystem(name='power',
                            subsys=PowerComp(num_nodes=nn),
-                           promotes=['power'])
+                           promotes=['m_flow', 'power'])
 
         # Tank to HX1
         self.connect('tank.T_out', 'heat_exchanger_pre.T_in')

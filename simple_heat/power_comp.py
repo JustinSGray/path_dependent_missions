@@ -18,3 +18,4 @@ class PowerComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['power'] = np.sum(inputs['m_flow'])
+        print('power', inputs['m_flow'], outputs['power'])
