@@ -18,7 +18,7 @@ p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
 p.driver.opt_settings['Verify level'] = -1
 
 # phase = RadauPseudospectralPhase(ode_function=SimpleHeatODE(), num_segments=5, transcription_order=3, compressed=False)
-phase = GaussLobattoPhase(ode_function=SimpleHeatODE(), num_segments=1, transcription_order=3, compressed=False)
+phase = GaussLobattoPhase(ode_function=SimpleHeatODE(), num_segments=10, transcription_order=9, compressed=False)
 
 phase.set_time_options(opt_initial=False, opt_duration=False)
 
@@ -28,9 +28,9 @@ phase.set_state_options('energy', fix_initial=True)
 phase.set_objective('energy', loc='final')
 # phase.set_objective('time')
 
-phase.add_control('m_flow', opt=True, lower=0., upper=2., dynamic=False)
+phase.add_control('m_flow', opt=True, lower=0., upper=5., dynamic=True)
 phase.add_control('m_burn', opt=False, dynamic=False)
-# phase.add_path_constraint('T', upper=1.)
+phase.add_path_constraint('T', upper=1.)
 # phase.add_path_constraint('fuel_burner.m_recirculated', lower=0.)
 # phase.add_path_constraint('m', lower=1.)
 
@@ -40,9 +40,9 @@ p.model.add_subsystem('phase', phase)
 p.setup(check=True, force_alloc_complex=True)
 
 p['phase.states:m'] = phase.interpolate(ys=[10., 10.], nodes='disc')
-p['phase.states:T'] = phase.interpolate(ys=[0., 0.], nodes='disc')
+p['phase.states:T'] = phase.interpolate(ys=[1., 1.], nodes='disc')
 p['phase.states:energy'] = 0.
-p['phase.controls:m_flow'] = 1. #phase.interpolate(ys=[0., 1.], nodes='all')
+p['phase.controls:m_flow'] = 10. #phase.interpolate(ys=[0., 1.], nodes='all')
 p['phase.controls:m_burn'] = 0.
 p['phase.t_initial'] = 0.
 p['phase.t_duration'] = 1.

@@ -2,7 +2,7 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 
-from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver
+from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, DenseJacobian, DirectSolver
 
 from pointer.ode_function import ODEFunction
 from path_dependent_missions.simple_heat.tank_comp import TankComp
@@ -35,7 +35,7 @@ class SimpleHeatSystem(Group):
         nn = self.metadata['num_nodes']
 
         self.add_subsystem(name='tank',
-                           subsys=TankComp(num_nodes=nn, q=30.),
+                           subsys=TankComp(num_nodes=nn, q=50.),
                            promotes=['m', 'm_flow', 'm_dot', 'T', 'T_dot'])
 
         self.add_subsystem(name='heat_exchanger_pre',
@@ -72,6 +72,8 @@ class SimpleHeatSystem(Group):
         self.connect('fuel_burner.m_recirculated', 'tank.m_in')
 
         self.nonlinear_solver = NonlinearBlockGS()
+        self.linear_solver = DirectSolver()
+        self.jacobian = DenseJacobian()
         # self.nonlinear_solver.options['iprint'] = 2
 
 if __name__ == "__main__":
