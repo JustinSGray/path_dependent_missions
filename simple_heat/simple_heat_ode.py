@@ -8,6 +8,7 @@ from pointer.ode_function import ODEFunction
 from path_dependent_missions.simple_heat.tank_comp import TankComp
 from path_dependent_missions.simple_heat.heat_exchanger_comp import HeatExchangerComp
 from path_dependent_missions.simple_heat.fuel_burner_comp import FuelBurnerComp
+from path_dependent_missions.simple_heat.power_comp import PowerComp
 
 
 class SimpleHeatODE(ODEFunction):
@@ -33,11 +34,11 @@ class SimpleHeatSystem(Group):
         nn = self.metadata['num_nodes']
 
         self.add_subsystem(name='tank',
-                           subsys=TankComp(num_nodes=nn, q=0.),
+                           subsys=TankComp(num_nodes=nn, q=30.),
                            promotes=['m', 'm_flow', 'm_dot', 'T', 'T_dot'])
 
         self.add_subsystem(name='heat_exchanger_pre',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=15.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=0.),
                            promotes=[])
 
         self.add_subsystem(name='fuel_burner',
@@ -45,8 +46,12 @@ class SimpleHeatSystem(Group):
                            promotes=['m_burn'])
 
         self.add_subsystem(name='heat_exchanger_post',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=-2.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=-10.),
                            promotes=[])
+
+        self.add_subsystem(name='power',
+                           subsys=PowerComp(num_nodes=nn),
+                           promotes=['power'])
 
         # Tank to HX1
         self.connect('tank.T_out', 'heat_exchanger_pre.T_in')

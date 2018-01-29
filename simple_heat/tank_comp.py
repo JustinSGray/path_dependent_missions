@@ -49,4 +49,4 @@ class TankComp(ExplicitComponent):
         partials['T_dot', 'T_in'] = inputs['m_in'] / inputs['m']
         partials['T_dot', 'T'] = -inputs['m_in'] / inputs['m']
         partials['T_dot', 'm_in'] = (inputs['T_in'] - inputs['T']) / inputs['m']
-        partials['T_dot', 'm'] = -inputs['T_in'] * inputs['m_in'] / inputs['m']**2 - self.q / (inputs['m']**2 * self.Cv)
+        partials['T_dot', 'm'] = (inputs['T'] - inputs['T_in']) * inputs['m_in'] / inputs['m']**2 - self.q / (inputs['m']**2 * self.Cv)
