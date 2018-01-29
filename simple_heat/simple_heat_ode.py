@@ -35,11 +35,11 @@ class SimpleHeatSystem(Group):
         nn = self.metadata['num_nodes']
 
         self.add_subsystem(name='tank',
-                           subsys=TankComp(num_nodes=nn, q=50.),
+                           subsys=TankComp(num_nodes=nn, q=0.),
                            promotes=['m', 'm_flow', 'm_dot', 'T', 'T_dot'])
 
         self.add_subsystem(name='heat_exchanger_pre',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=0.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=20.),
                            promotes=[])
 
         self.add_subsystem(name='fuel_burner',
