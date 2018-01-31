@@ -35,11 +35,11 @@ class SimpleHeatSystem(Group):
         nn = self.metadata['num_nodes']
 
         self.add_subsystem(name='tank',
-                           subsys=TankComp(num_nodes=nn, q=0.),
+                           subsys=TankComp(num_nodes=nn, q=15.),
                            promotes=['m', 'm_flow', 'm_dot', 'T', 'T_dot'])
 
         self.add_subsystem(name='heat_exchanger_pre',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=20.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=0.),
                            promotes=[])
 
         self.add_subsystem(name='fuel_burner',
@@ -47,7 +47,7 @@ class SimpleHeatSystem(Group):
                            promotes=['m_burn'])
 
         self.add_subsystem(name='heat_exchanger_post',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=-10.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=-20.),
                            promotes=[])
 
         self.add_subsystem(name='power',
@@ -71,10 +71,10 @@ class SimpleHeatSystem(Group):
         self.connect('heat_exchanger_post.T_out', 'tank.T_in')
         self.connect('fuel_burner.m_recirculated', 'tank.m_in')
 
+        # Set solvers
         self.nonlinear_solver = NonlinearBlockGS()
         self.linear_solver = DirectSolver()
         self.jacobian = DenseJacobian()
-        # self.nonlinear_solver.options['iprint'] = 2
 
 if __name__ == "__main__":
     from openmdao.api import Problem, view_model, IndepVarComp
