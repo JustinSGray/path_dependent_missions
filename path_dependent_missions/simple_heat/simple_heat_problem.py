@@ -36,14 +36,13 @@ phase.add_path_constraint('fuel_burner.m_recirculated', lower=0.)
 # phase.add_path_constraint('m', lower=1.)
 
 p.model.add_subsystem('phase', phase)
-# p.model.jacobian = DenseJacobian()
 
 p.setup(check=True, force_alloc_complex=True)
 
 p['phase.states:m'] = phase.interpolate(ys=[10., 5.], nodes='disc')
 p['phase.states:T'] = phase.interpolate(ys=[1., 1.], nodes='disc')
 p['phase.states:energy'] = 0.
-p['phase.controls:m_flow'] = 10. #phase.interpolate(ys=[0., 1.], nodes='all')
+p['phase.controls:m_flow'] = 10.
 p['phase.controls:m_burn'] = 0.
 p['phase.t_initial'] = 0.
 p['phase.t_duration'] = 1.
@@ -54,9 +53,6 @@ if 0:
     out = p.model.phase.simulate()
     p.check_partials(compact_print=True, method='cs')
 
-    # from openmdao.api import view_model
-    # view_model(p)
-
     m = out.get_values('m')
     time = out.get_values('time')
     T = out.get_values('T')
@@ -64,11 +60,8 @@ if 0:
     energy = out.get_values('energy')
 
 else:
-    # p.run_model()
     p.run_driver()
 
-    # p.check_totals()
-    #
     m = p.model.phase.get_values('m', nodes='all')
     time = p.model.phase.get_values('time', nodes='all')
     T = p.model.phase.get_values('T', nodes='all')

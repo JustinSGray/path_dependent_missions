@@ -18,7 +18,6 @@ setup(name='path_dependent_missions',
       packages=find_packages(),
       install_requires=[
         'openmdao',
-        'numpy>=1.9.2',
         'scipy',
         'pep8',
         'parameterized',

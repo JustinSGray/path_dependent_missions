@@ -1,9 +1,6 @@
 import numpy as np
 from openmdao.api import ExplicitComponent
 
-# TODO: see if this is actually needed. Currently it prevents numerical issues
-# when m_in is 0.
-tol = 1e-10
 
 class HeatExchangerComp(ExplicitComponent):
 
@@ -19,16 +16,11 @@ class HeatExchangerComp(ExplicitComponent):
         self.add_input('m_in', shape=self.nn, units='kg/s')
         self.add_output('T_out', shape=self.nn, units='K')
 
-        self.Cv = 1.
+        self.coeff = 10.
 
         self.ar = ar = np.arange(self.nn)
         self.declare_partials('T_out', 'T_in', val=1., rows=ar, cols=ar)
-        self.declare_partials('T_out', 'm_in', dependent=True, rows=ar, cols=ar)
+        self.declare_partials('T_out', 'm_in', val=self.coeff * self.q, rows=ar, cols=ar)
 
     def compute(self, inputs, outputs):
-        # outputs['T_out'] = self.q / (inputs['m_in']**2 * self.Cv + tol) + inputs['T_in']
-        outputs['T_out'] = 10. * self.q * inputs['m_in'] + inputs['T_in']
-
-    def compute_partials(self, inputs, partials):
-        # partials['T_out', 'm_in'] = -2 * self.Cv * self.q * inputs['m_in'] / (self.Cv * inputs['m_in']**2 + tol)**2
-        partials['T_out', 'm_in'] = 10. * self.q
+        outputs['T_out'] = self.coeff * self.q * inputs['m_in'] + inputs['T_in']
