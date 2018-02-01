@@ -13,8 +13,11 @@ from path_dependent_missions.simple_heat.power_comp import PowerComp
 
 class SimpleHeatODE(ODEFunction):
 
-    def __init__(self):
-        super(SimpleHeatODE, self).__init__(system_class=SimpleHeatSystem)
+    def __init__(self, q_tank, q_hx1, q_hx2):
+        super(SimpleHeatODE, self).__init__(system_class=SimpleHeatSystem,
+                                          system_init_kwargs={'q_tank': q_tank,
+                                                              'q_hx1': q_hx1,
+                                                              'q_hx2': q_hx2})
 
         self.declare_time(units='s')
 
@@ -30,16 +33,22 @@ class SimpleHeatSystem(Group):
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
+        self.metadata.declare('q_tank', types=float)
+        self.metadata.declare('q_hx1', types=float)
+        self.metadata.declare('q_hx2', types=float)
 
     def setup(self):
         nn = self.metadata['num_nodes']
+        q_tank = self.metadata['q_tank']
+        q_hx1 = self.metadata['q_hx1']
+        q_hx2 = self.metadata['q_hx2']
 
         self.add_subsystem(name='tank',
-                           subsys=TankComp(num_nodes=nn, q=15.),
+                           subsys=TankComp(num_nodes=nn, q=q_tank),
                            promotes=['m', 'm_flow', 'm_dot', 'T', 'T_dot'])
 
         self.add_subsystem(name='heat_exchanger_pre',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=0.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=q_hx1),
                            promotes=[])
 
         self.add_subsystem(name='fuel_burner',
@@ -47,7 +56,7 @@ class SimpleHeatSystem(Group):
                            promotes=['m_burn'])
 
         self.add_subsystem(name='heat_exchanger_post',
-                           subsys=HeatExchangerComp(num_nodes=nn, q=-20.),
+                           subsys=HeatExchangerComp(num_nodes=nn, q=q_hx2),
                            promotes=[])
 
         self.add_subsystem(name='power',
