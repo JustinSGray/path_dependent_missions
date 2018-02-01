@@ -8,13 +8,8 @@ from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 from path_dependent_missions.simple_heat.simple_heat_ode import SimpleHeatODE
 import numpy as np
 
-q_tank = 5.
-q_hx1 = 15.
-q_hx2 = -20.
-num_seg = 5
-order = 5
 
-def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2):
+def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
 
     p = Problem(model=Group())
 
@@ -36,7 +31,10 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2):
     phase.set_objective('energy', loc='final')
 
     phase.add_control('m_flow', opt=True, lower=0., upper=5., dynamic=True)
-    phase.add_control('m_burn', opt=True, lower=0., upper=5., dynamic=True)
+    if opt_burn:
+        phase.add_control('m_burn', opt=opt_burn, lower=.2, upper=5., dynamic=False)
+    else:
+        phase.add_control('m_burn', opt=opt_burn, dynamic=True)
     phase.add_path_constraint('T', upper=1.)
     phase.add_path_constraint('m_flow_rate', upper=0.)
     phase.add_path_constraint('fuel_burner.m_recirculated', lower=0.)
@@ -45,33 +43,17 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2):
 
     p.setup(check=True, force_alloc_complex=True)
 
-    p['phase.states:m'] = phase.interpolate(ys=[10., 5.], nodes='disc')
-    p['phase.states:T'] = phase.interpolate(ys=[1., 1.], nodes='disc')
+    p['phase.states:m'] = 10.
+    p['phase.states:T'] = 1.
     p['phase.states:energy'] = 0.
-    p['phase.controls:m_flow'] = 10.
-    p['phase.controls:m_burn'] = 0.
+    p['phase.controls:m_flow'] = .5
+    p['phase.controls:m_burn'] = .1
     p['phase.t_initial'] = 0.
     p['phase.t_duration'] = 1.
 
     return p
 
-p = setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2)
-
-
-if 0:
-    p.run_model()
-    out = p.model.phase.simulate()
-    p.check_partials(compact_print=True, method='cs')
-
-    m = out.get_values('m')
-    time = out.get_values('time')
-    T = out.get_values('T')
-    m_flow = out.get_values('m_flow')
-    energy = out.get_values('energy')
-
-else:
-    p.run_driver()
-
+def plot_results(p):
     m = p.model.phase.get_values('m', nodes='all')
     time = p.model.phase.get_values('time', nodes='all')
     T = p.model.phase.get_values('T', nodes='all')
@@ -85,8 +67,6 @@ else:
     T2 = out.get_values('T')
     m_flow2 = out.get_values('m_flow')
     energy2 = out.get_values('energy')
-
-if 1:
 
     import matplotlib.pyplot as plt
     f, axarr = plt.subplots(4, sharex=True)
