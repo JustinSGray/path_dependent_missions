@@ -3,6 +3,12 @@ from openmdao.api import ExplicitComponent
 
 
 class HeatExchangerComp(ExplicitComponent):
+    """
+    Compute the output temperature from a heat exchanger given a set input/output
+    heat and an input temperature and mass flow.
+    This isn't a physical heat exchanger model right now, but just something
+    that increases or decreases the heat scaled by the mass flow.
+    """
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)

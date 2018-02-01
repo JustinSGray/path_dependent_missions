@@ -12,6 +12,14 @@ from path_dependent_missions.simple_heat.power_comp import PowerComp
 
 
 class SimpleHeatODE(ODEFunction):
+    """
+    Defines the ODE for the fuel circulation problem.
+    Here we define the states and parameters (controls) for the problem.
+
+    m : mass of the fuel in the tank
+    T : temperature of the fuel in the tank
+    energy : energy required to pump the fuel in the system
+    """
 
     def __init__(self, q_tank, q_hx1, q_hx2):
         super(SimpleHeatODE, self).__init__(system_class=SimpleHeatSystem,
@@ -30,6 +38,9 @@ class SimpleHeatODE(ODEFunction):
 
 
 class SimpleHeatSystem(Group):
+    """
+    Set up an OpenMDAO Group for all of the thermal components.
+    """
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)

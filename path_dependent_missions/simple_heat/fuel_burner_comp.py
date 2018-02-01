@@ -3,6 +3,10 @@ from openmdao.api import ExplicitComponent
 
 
 class FuelBurnerComp(ExplicitComponent):
+    """
+    This component computes the amount of fuel to be recirculated based on the
+    total fuel coming in and the amount of fuel being burned by the engine.
+    """
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)

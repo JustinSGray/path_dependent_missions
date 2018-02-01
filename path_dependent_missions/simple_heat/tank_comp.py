@@ -3,6 +3,10 @@ from openmdao.api import ExplicitComponent
 
 
 class TankComp(ExplicitComponent):
+    """
+    This contains information about the fuel tank, especially its temperature,
+    mass of fuel, flow in and out, and how those all change.
+    """
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
@@ -36,9 +40,13 @@ class TankComp(ExplicitComponent):
         self.declare_partials('T_dot', 'm', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs):
+        # The change in fuel mass is the difference between the amount pumped out
+        # and the amount coming back in from recirculation
         outputs['m_dot'] = inputs['m_in'] - inputs['m_flow']
         outputs['m_out'] = inputs['m_flow']
 
+        # Both the heat energy being added to the fuel tank and the energy
+        # coming from the recirculated fuel affect the temperature of the tank
         heat_input = self.q / (inputs['m'] * self.Cv)
         temp_input = (inputs['T_in'] - inputs['T']) * inputs['m_in'] / inputs['m']
         outputs['T_dot'] = heat_input + temp_input

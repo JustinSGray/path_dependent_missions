@@ -3,6 +3,10 @@ from openmdao.api import ExplicitComponent
 
 
 class PowerComp(ExplicitComponent):
+    """
+    Compute the power needed to pump the fuel.
+    In this simple case, it's a 1:1 function with the amount of fuel being pumped.
+    """
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)

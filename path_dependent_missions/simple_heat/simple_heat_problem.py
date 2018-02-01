@@ -1,7 +1,7 @@
 from __future__ import print_function, division, absolute_import
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian
+    CSCJacobian, CSRJacobian, SqliteRecorder
 
 from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 
@@ -10,9 +10,35 @@ import numpy as np
 
 
 def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
+    """
+    Helper function to set up and return a problem instance for an energy minimization
+    of a simple thermal system.
 
+    Parameters
+    ----------
+    num_seg : int
+        The number of ODE segments to use when discretizing the problem.
+    order : int
+        The order for the polynomial interpolation for the collocation methods.
+    q_tank : float
+        The amount of inputted heat to the fuel tank. Positive is heat inputted
+        to the fuel tank.
+    q_hx1 : float
+        A measure of the amount of heat added to the fuel at the first heat exchanger.
+        This mimics the fuel handling the heat generated from a thermal load,
+        such as avionicsc or air conditioners.
+    q_hx2 : float
+        A measure of the amount of heat added to the fuel at the second heat exchanger.
+        This may be a negative number, which means that heat is being taken out
+        of the fuel in some way.
+    opt_burn : boolean
+        If true, we allow the optimizer to control the amount of fuel burned
+        in the system. This mimics the cost of the fuel needed in the plane
+        to provide thrust.
+    """
+
+    # Instantiate the problem and set the optimizer
     p = Problem(model=Group())
-
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = 'SNOPT'
     p.driver.opt_settings['Major iterations limit'] = 2000
@@ -20,29 +46,43 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-7
     p.driver.opt_settings['Verify level'] = -1
 
+    # Set up the phase for the defined ODE function, can be LGR or LGL
     # phase = RadauPseudospectralPhase(ode_function=SimpleHeatODE(), num_segments=num_seg, transcription_order=order, compressed=False)
     phase = GaussLobattoPhase(ode_function=SimpleHeatODE(q_tank=q_tank, q_hx1=q_hx1, q_hx2=q_hx2), num_segments=num_seg, transcription_order=order, compressed=False)
 
+    # Do not allow the time to vary during the optimization
     phase.set_time_options(opt_initial=False, opt_duration=False)
 
+    # Set the state options for mass, temperature, and energy.
     phase.set_state_options('m', lower=1., upper=10., fix_initial=True)
     phase.set_state_options('T', fix_initial=True, defect_scaler=.01)
     phase.set_state_options('energy', fix_initial=True)
+
+    # Minimize the energy used to pump the fuel
     phase.set_objective('energy', loc='final')
 
+    # Allow the optimizer to vary the fuel flow
     phase.add_control('m_flow', opt=True, lower=0., upper=5., dynamic=True)
+
+    # Optimize the burned fuel amount, if selected
     if opt_burn:
         phase.add_control('m_burn', opt=opt_burn, lower=.2, upper=5., dynamic=False)
     else:
         phase.add_control('m_burn', opt=opt_burn, dynamic=True)
+
+    # Constrain the temperature, 2nd derivative of fuel mass in the tank, and make
+    # sure that the amount recirculated is at least 0, otherwise we'd burn
+    # more fuel than we pumped.
     phase.add_path_constraint('T', upper=1.)
     phase.add_path_constraint('m_flow_rate', upper=0.)
     phase.add_path_constraint('fuel_burner.m_recirculated', lower=0.)
 
+    # Add the phase to the problem and set it up
     p.model.add_subsystem('phase', phase)
-
+    p.driver.add_recorder(SqliteRecorder('out.db'))
     p.setup(check=True, force_alloc_complex=True)
 
+    # Give initial values for the phase states, controls, and time
     p['phase.states:m'] = 10.
     p['phase.states:T'] = 1.
     p['phase.states:energy'] = 0.
@@ -54,6 +94,17 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     return p
 
 def plot_results(p):
+    """
+    Helper function to perform explicit simulation at the optimized point
+    and plot the results. Points are the collocation nodes and the solid
+    lines are the explicit simulation results.
+
+    Parameters
+    ----------
+    p : OpenMDAO Problem instance
+        This problem instance should contain the optimized outputs from the
+        energy minimization thermal problem.
+    """
     m = p.model.phase.get_values('m', nodes='all')
     time = p.model.phase.get_values('time', nodes='all')
     T = p.model.phase.get_values('T', nodes='all')
