@@ -6,10 +6,10 @@ from openmdao.api import Group, IndepVarComp
 
 from pointer.ode_function import ODEFunction
 
-from pointer.models.atmosphere import StandardAtmosphereGroup
+from ...models.atmosphere import StandardAtmosphereGroup
 from .aero import AeroGroup
 from .prop import PropGroup
-from pointer.models.eom import FlightPathEOM2D
+from ...models.eom import FlightPathEOM2D
 
 
 class MinTimeClimbODE(ODEFunction):
@@ -30,6 +30,7 @@ class MinTimeClimbODE(ODEFunction):
         self.declare_parameter('alpha', targets=['alpha'], units='rad')
         self.declare_parameter('Isp', targets=['Isp'], units='s')
         self.declare_parameter('S', targets=['S'], units='m**2')
+        self.declare_parameter('throttle', targets=['throttle'], units=None)
 
 
 class BrysonMinTimeClimbSystem(Group):
@@ -65,8 +66,8 @@ class BrysonMinTimeClimbSystem(Group):
         self.connect('atmos.rho', 'aero.rho')
 
         self.add_subsystem(name='prop',
-                           subsys=PropGroup(num_nodes=nn, mbi_thrust=self.metadata['mbi_thrust']),
-                           promotes_inputs=['h', 'Isp'])
+                           subsys=PropGroup(num_nodes=nn),
+                           promotes_inputs=['h', 'Isp', 'throttle'])
 
         self.connect('aero.mach', 'prop.mach')
 

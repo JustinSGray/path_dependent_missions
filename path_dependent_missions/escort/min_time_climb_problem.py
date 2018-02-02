@@ -5,7 +5,7 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 
 from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 
-from path_dependent_missions.escort.min_time_climb_ode import MinTimeClimbODE
+from pointer.examples.min_time_climb.min_time_climb_ode import MinTimeClimbODE
 
 _phase_map = {'gauss-lobatto': GaussLobattoPhase,
               'radau-ps': RadauPseudospectralPhase}
@@ -26,7 +26,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
-        p.driver.opt_settings['Verify level'] = -1
+        p.driver.opt_settings['Verify level'] = 3
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
         p.driver.opt_settings['Major step limit'] = 0.5
@@ -63,6 +63,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     phase.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
     phase.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
@@ -78,10 +79,10 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.model.jacobian = CSCJacobian()
         p.model.linear_solver = DirectSolver()
 
-    p.setup(mode='fwd')
+    p.setup(mode='fwd', check=True)
 
-    p['phase0.t0'] = 0.0
-    p['phase0.tp'] = 298.46902
+    p['phase0.t_initial'] = 0.0
+    p['phase0.t_duration'] = 298.46902
     p['phase0.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
     p['phase0.states:h'] = phase.interpolate(ys=[100.0, 20000.0], nodes='disc')
     p['phase0.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
@@ -106,24 +107,6 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(optimizer='SNOPT', num_seg=6, transcription_order=3, mbi_thrust=True, transcription='radau-ps')
-    from openmdao.api import view_model
-    view_model(p)
-    exit()
+    p = min_time_climb_problem(optimizer='SNOPT', num_seg=10, transcription_order=3)
     p.run_model()
     p.run_driver()
-
-
-    import matplotlib.pyplot as plt
-
-    h = p['phase0.states:h']
-    r = p['phase0.states:r']
-    mach = p['phase0.rhs_disc.aero.mach_comp.mach']
-
-    ax1 = plt.subplot(211)
-    plt.plot(r, h)
-
-    ax2 = plt.subplot(212)
-    plt.plot(r, mach)
-
-    plt.show()

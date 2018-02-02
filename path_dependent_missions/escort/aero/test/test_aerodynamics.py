@@ -23,7 +23,6 @@ class TestAeroGroup(unittest.TestCase):
         ivc.add_output('v', val=0.0001*np.ones(nn), units='m/s')
         ivc.add_output('S', val=0.0001*np.ones(nn), units='m**2')
         ivc.add_output('alpha', val=np.zeros(nn), units='rad')
-        ivc.add_output('beta', val=np.zeros(nn), units='rad')
         ivc.add_output('sos', val=np.ones(nn), units='m/s')
         self.prob.model.add_subsystem(name='ivc', subsys=ivc, promotes_outputs=['*'])
 
@@ -33,7 +32,6 @@ class TestAeroGroup(unittest.TestCase):
         self.prob.model.connect('v', 'aero.v')
         self.prob.model.connect('S', 'aero.S')
         self.prob.model.connect('alpha', 'aero.alpha')
-        self.prob.model.connect('beta', 'aero.beta')
         self.prob.model.connect('sos', 'aero.sos')
 
         self.prob.setup()
@@ -45,19 +43,16 @@ class TestAeroGroup(unittest.TestCase):
         self.prob['S'] = 49.2386
 
         self.prob['alpha'] = np.radians(4.1900199)
-        self.prob['beta'] = np.radians(0.0)
         self.prob['sos'] = 340.29396
         self.prob.run_model()
 
         q_expected = 0.5*self.prob['rho']*self.prob['v']**2
         lift_expected = q_expected*self.prob['S']*self.prob['aero.CL']   # [101779.451502]
         drag_expected = q_expected*self.prob['S']*self.prob['aero.CD']   # [9278.85725577]
-        cross_expected = q_expected*self.prob['S']*self.prob['aero.CC']  # [0.0]
 
         assert_almost_equal(self.prob['aero.q'], q_expected, decimal=7)
         assert_almost_equal(self.prob['aero.f_lift'], lift_expected, decimal=7)
         assert_almost_equal(self.prob['aero.f_drag'], drag_expected, decimal=7)
-        assert_almost_equal(self.prob['aero.f_cross'], cross_expected, decimal=7)
 
     def testAeroDerivs(self):
         cpd = self.prob.check_partials(compact_print=True)

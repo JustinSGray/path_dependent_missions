@@ -3,8 +3,10 @@ from __future__ import absolute_import
 from openmdao.api import Group
 
 from .mdot_comp import MassFlowRateComp
-from .bryson_thrust_comp import BrysonThrustComp
-from .mbi_thrust_comp import MBIThrustComp
+from .bryson_max_thrust_comp import BrysonMaxThrustComp
+from .mbi_max_thrust_comp import MBIMaxThrustComp
+from .max_thrust_comp import MaxThrustComp
+from .thrust_comp import ThrustComp
 
 
 class PropGroup(Group):
@@ -20,6 +22,8 @@ class PropGroup(Group):
         altitude (m)
     Isp : float
         specific impulse (s)
+    throttle : float
+        throttle value nominally between 0.0 and 1.0 (unitless)
 
     Unknowns
     --------
@@ -32,21 +36,27 @@ class PropGroup(Group):
     def initialize(self):
         self.metadata.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
-
-        self.metadata.declare('mbi_thrust', types=bool, default=False,
-                              desc='If True, use MBI interpolant for thrust comp')
+        self.metadata.declare('thrust_model', values=['bryson', 'mbi', 'metamodel'],
+                              default='metamodel', desc='Type of thrust model to be used')
 
     def setup(self):
         nn = self.metadata['num_nodes']
 
-        if self.metadata['mbi_thrust']:
-            thrust_comp = MBIThrustComp(num_nodes=nn)
+        if self.metadata['thrust_model'] == 'bryson':
+            max_thrust_comp = BrysonMaxThrustComp(num_nodes=nn)
+        elif self.metadata['thrust_model'] == 'mbi':
+            max_thrust_comp = MBIMaxThrustComp(num_nodes=nn)
         else:
-            thrust_comp = BrysonThrustComp(num_nodes=nn)
+            max_thrust_comp = MaxThrustComp(num_nodes=nn, extrapolate=True, method='cubic')
+
+        self.add_subsystem(name='max_thrust_comp',
+                           subsys=max_thrust_comp,
+                           promotes_inputs=['mach', 'h'],
+                           promotes_outputs=['max_thrust'])
 
         self.add_subsystem(name='thrust_comp',
-                           subsys=thrust_comp,
-                           promotes_inputs=['mach', 'h'],
+                           subsys=ThrustComp(num_nodes=nn),
+                           promotes_inputs=['max_thrust', 'throttle'],
                            promotes_outputs=['thrust'])
 
         self.add_subsystem(name='mdot_comp',

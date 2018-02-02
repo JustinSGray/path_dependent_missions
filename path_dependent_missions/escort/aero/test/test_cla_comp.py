@@ -7,7 +7,7 @@ import numpy as np
 from openmdao.api import Problem, Group, IndepVarComp
 from openmdao.utils.assert_utils import assert_rel_error
 
-from path_dependent_missions.escort.aero.cla_comp import CLaComp
+from pointer.examples.min_time_climb.aero.cla_comp import CLaComp
 
 assert_almost_equal = np.testing.assert_almost_equal
 
