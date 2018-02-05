@@ -12,6 +12,7 @@ from .cla_comp import CLaComp
 from .cl_comp import CLComp
 from .cd_comp import CDComp
 from .mach_comp import MachComp
+from path_dependent_missions.escort.aero.oas_aero import OASGroup
 
 
 class AeroGroup(Group):
@@ -59,6 +60,14 @@ class AeroGroup(Group):
                            subsys=CLaComp(num_nodes=nn),
                            promotes_inputs=['mach'],
                            promotes_outputs=['CLa'])
+
+        # self.add_subsystem(name='OAS_group',
+        #                    subsys=OASGroup(num_nodes=nn),
+        #                    promotes_inputs=[('rho_kg_m3', 'rho'), ('v_m_s', 'v')],
+        #                    )
+        #
+        # self.connect('OAS_group.C_L', 'CL')
+        # self.connect('OAS_group.C_D', 'CD')
 
         self.add_subsystem(name='CL_comp',
                            subsys=CLComp(num_nodes=nn),

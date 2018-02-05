@@ -6,17 +6,17 @@ from openmdao.api import Group, IndepVarComp
 
 from pointer.ode_function import ODEFunction
 
-from ...models.atmosphere import StandardAtmosphereGroup
+from pointer.models.atmosphere import StandardAtmosphereGroup
 from .aero import AeroGroup
 from .prop import PropGroup
-from ...models.eom import FlightPathEOM2D
+from pointer.models.eom import FlightPathEOM2D
 
 
 class MinTimeClimbODE(ODEFunction):
 
-    def __init__(self, mbi_thrust=True):
+    def __init__(self, thrust_model='bryson'):
         super(MinTimeClimbODE, self).__init__(system_class=BrysonMinTimeClimbSystem,
-                                              system_init_kwargs={'mbi_thrust': mbi_thrust})
+                                              system_init_kwargs={'thrust_model': thrust_model})
 
         self.declare_time(units='s')
 
@@ -28,6 +28,8 @@ class MinTimeClimbODE(ODEFunction):
         self.declare_state('m', units='kg', rate_source='prop.m_dot', targets=['m'])
 
         self.declare_parameter('alpha', targets=['alpha'], units='rad')
+        # self.declare_parameter('alpha', targets=['alpha', 'aero.OAS_group.alpha_rad'], units='rad')
+
         self.declare_parameter('Isp', targets=['Isp'], units='s')
         self.declare_parameter('S', targets=['S'], units='m**2')
         self.declare_parameter('throttle', targets=['throttle'], units=None)
@@ -37,10 +39,11 @@ class BrysonMinTimeClimbSystem(Group):
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('mbi_thrust', types=bool)
+        self.metadata.declare('thrust_model', types=str)
 
     def setup(self):
         nn = self.metadata['num_nodes']
+        thrust_model = self.metadata['thrust_model']
 
         # # We'll use an IndepVarComp in the phase to provide Isp and reference area.
         # ivc = IndepVarComp()
@@ -66,7 +69,7 @@ class BrysonMinTimeClimbSystem(Group):
         self.connect('atmos.rho', 'aero.rho')
 
         self.add_subsystem(name='prop',
-                           subsys=PropGroup(num_nodes=nn),
+                           subsys=PropGroup(num_nodes=nn, thrust_model=thrust_model),
                            promotes_inputs=['h', 'Isp', 'throttle'])
 
         self.connect('aero.mach', 'prop.mach')

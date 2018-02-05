@@ -6,6 +6,7 @@ from .mdot_comp import MassFlowRateComp
 from .bryson_max_thrust_comp import BrysonMaxThrustComp
 from .mbi_max_thrust_comp import MBIMaxThrustComp
 from .max_thrust_comp import MaxThrustComp
+from .smt_thrust_comp import SMTMaxThrustComp
 from .thrust_comp import ThrustComp
 
 
@@ -36,7 +37,7 @@ class PropGroup(Group):
     def initialize(self):
         self.metadata.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
-        self.metadata.declare('thrust_model', values=['bryson', 'mbi', 'metamodel'],
+        self.metadata.declare('thrust_model', values=['bryson', 'mbi', 'metamodel', 'smt'],
                               default='metamodel', desc='Type of thrust model to be used')
 
     def setup(self):
@@ -46,6 +47,8 @@ class PropGroup(Group):
             max_thrust_comp = BrysonMaxThrustComp(num_nodes=nn)
         elif self.metadata['thrust_model'] == 'mbi':
             max_thrust_comp = MBIMaxThrustComp(num_nodes=nn)
+        elif self.metadata['thrust_model'] == 'smt':
+            max_thrust_comp = SMTMaxThrustComp(num_nodes=nn)
         else:
             max_thrust_comp = MaxThrustComp(num_nodes=nn, extrapolate=True, method='cubic')
 
