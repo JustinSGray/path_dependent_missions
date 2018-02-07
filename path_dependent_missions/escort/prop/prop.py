@@ -8,6 +8,10 @@ from .mbi_max_thrust_comp import MBIMaxThrustComp
 from .max_thrust_comp import MaxThrustComp
 from .smt_thrust_comp import SMTMaxThrustComp
 from .thrust_comp import ThrustComp
+from .SFC_comp import SFCComp
+from .fuel_rate_comp import FuelRateComp
+
+from path_dependent_missions.escort.prop.b777_engine_data import get_prop_smt_model
 
 
 class PropGroup(Group):
@@ -48,7 +52,8 @@ class PropGroup(Group):
         elif self.metadata['thrust_model'] == 'mbi':
             max_thrust_comp = MBIMaxThrustComp(num_nodes=nn)
         elif self.metadata['thrust_model'] == 'smt':
-            max_thrust_comp = SMTMaxThrustComp(num_nodes=nn)
+            smt_prop_model = get_prop_smt_model()
+            max_thrust_comp = SMTMaxThrustComp(num_nodes=nn, propulsion_model=smt_prop_model)
         else:
             max_thrust_comp = MaxThrustComp(num_nodes=nn, extrapolate=True, method='cubic')
 
@@ -62,7 +67,18 @@ class PropGroup(Group):
                            promotes_inputs=['max_thrust', 'throttle'],
                            promotes_outputs=['thrust'])
 
-        self.add_subsystem(name='mdot_comp',
-                           subsys=MassFlowRateComp(num_nodes=nn),
-                           promotes_inputs=['thrust', 'Isp'],
-                           promotes_outputs=['m_dot'])
+        if self.metadata['thrust_model'] == 'smt':
+            self.add_subsystem(name='sfc_comp',
+                               subsys=SFCComp(num_nodes=nn, propulsion_model=smt_prop_model),
+                               promotes_inputs=['mach', 'h', 'throttle'],
+                               promotes_outputs=['SFC_1em6_NNs'])
+
+            self.add_subsystem(name='fuel_rate_comp',
+                               subsys=FuelRateComp(num_nodes=nn),
+                               promotes_inputs=['thrust', 'SFC_1em6_NNs', 'Isp'],
+                               promotes_outputs=['m_dot'])
+        else:
+            self.add_subsystem(name='mdot_comp',
+                               subsys=MassFlowRateComp(num_nodes=nn),
+                               promotes_inputs=['thrust', 'Isp'],
+                               promotes_outputs=['m_dot'])

@@ -2,14 +2,13 @@ from __future__ import division
 import numpy as np
 
 from openmdao.api import ExplicitComponent
-from path_dependent_missions.escort.prop.b777_engine_data import get_prop_smt_model
 
 
 class SMTMaxThrustComp(ExplicitComponent):
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
-        self.propulsion_model = get_prop_smt_model()
+        self.metadata.declare('propulsion_model')
 
     def setup(self):
         num_points = self.metadata['num_nodes']
@@ -29,7 +28,7 @@ class SMTMaxThrustComp(ExplicitComponent):
         M = inputs['mach']
         h_km = inputs['h']
 
-        propulsion_model = self.propulsion_model
+        propulsion_model = self.metadata['propulsion_model']
 
         self.x[:, 0] = M
         self.x[:, 1] = h_km
@@ -40,7 +39,7 @@ class SMTMaxThrustComp(ExplicitComponent):
         M = inputs['mach']
         h_km = inputs['h']
 
-        propulsion_model = self.propulsion_model
+        propulsion_model = self.metadata['propulsion_model']
 
         self.x[:, 0] = M
         self.x[:, 1] = h_km
