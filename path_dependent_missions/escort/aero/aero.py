@@ -61,23 +61,25 @@ class AeroGroup(Group):
                            promotes_inputs=['mach'],
                            promotes_outputs=['CLa'])
 
-        # self.add_subsystem(name='OAS_group',
-        #                    subsys=OASGroup(num_nodes=nn),
-        #                    promotes_inputs=[('rho_kg_m3', 'rho'), ('v_m_s', 'v')],
-        #                    )
-        #
-        # self.connect('OAS_group.C_L', 'CL')
-        # self.connect('OAS_group.C_D', 'CD')
+        if 1:
+            self.add_subsystem(name='OAS_group',
+                               subsys=OASGroup(num_nodes=nn),
+                               promotes_inputs=[('rho_kg_m3', 'rho'), ('v_m_s', 'v')],
+                               )
 
-        self.add_subsystem(name='CL_comp',
-                           subsys=CLComp(num_nodes=nn),
-                           promotes_inputs=['alpha', 'CLa'],
-                           promotes_outputs=['CL'])
+            self.connect('OAS_group.C_L', 'CL')
+            self.connect('OAS_group.C_D', 'CD')
 
-        self.add_subsystem(name='CD_comp',
-                           subsys=CDComp(num_nodes=nn),
-                           promotes_inputs=['CD0', 'alpha', 'CLa', 'kappa'],
-                           promotes_outputs=['CD'])
+        else:
+            self.add_subsystem(name='CL_comp',
+                               subsys=CLComp(num_nodes=nn),
+                               promotes_inputs=['alpha', 'CLa'],
+                               promotes_outputs=['CL'])
+
+            self.add_subsystem(name='CD_comp',
+                               subsys=CDComp(num_nodes=nn),
+                               promotes_inputs=['CD0', 'alpha', 'CLa', 'kappa'],
+                               promotes_outputs=['CD'])
 
         self.add_subsystem(name='q_comp',
                            subsys=DynamicPressureComp(num_nodes=nn),

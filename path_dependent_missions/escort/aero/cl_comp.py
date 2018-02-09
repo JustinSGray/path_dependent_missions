@@ -25,6 +25,7 @@ class CLComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['CL'][:] = inputs['CLa']*inputs['alpha']
+        print('CL', outputs['CL'])
 
     def compute_partials(self, inputs, partials):
         partials['CL', 'CLa'] = inputs['alpha']

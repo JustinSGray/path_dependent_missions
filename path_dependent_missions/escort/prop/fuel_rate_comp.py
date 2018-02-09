@@ -14,7 +14,6 @@ class FuelRateComp(ExplicitComponent):
 
         self.add_input('thrust', shape=num_points)
         self.add_input('SFC_1em6_NNs', shape=num_points)
-        self.add_input('Isp', shape=num_points)
         self.add_output('m_dot', val=1.0, shape=num_points)
 
         arange = np.arange(num_points)

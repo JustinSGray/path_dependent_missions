@@ -15,7 +15,11 @@ setup(name='path_dependent_missions',
       author='John Jasa',
       author_email='johnjasa@umich.edu',
       license='Apache License, Version 2.0',
-      packages=find_packages(),
+      packages=[
+        'path_dependent_missions',
+        'path_dependent_missions/escort',
+        'path_dependent_missions/simple_heat',
+        ],
       install_requires=[
         'openmdao',
         'scipy',

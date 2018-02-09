@@ -1,4 +1,5 @@
 from __future__ import print_function, division, absolute_import
+import numpy as np
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
     CSCJacobian, CSRJacobian, SqliteRecorder
@@ -12,7 +13,7 @@ _phase_map = {'gauss_lobatto': GaussLobattoPhase,
 
 
 def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
-                           transcription='radau_ps', alpha_guess=False,
+                           transcription='gauss_lobatto', alpha_guess=False,
                            top_level_densejacobian=True, simul_derivs=False,
                            thrust_model='bryson'):
 
@@ -24,8 +25,8 @@ def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     if optimizer == 'SNOPT':
         p.driver.opt_settings['Major iterations limit'] = 1000
         p.driver.opt_settings['iSumm'] = 6
-        p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-12
-        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-12
+        p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-9
+        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-9
         p.driver.opt_settings['Verify level'] = -1
         # p.driver.opt_settings['Function precision'] = 1.0E-6
         # p.driver.opt_settings['Linesearch tolerance'] = 0.10
@@ -50,30 +51,33 @@ def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     phase.set_state_options('h', fix_initial=True, lower=0, upper=14000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
 
-    phase.set_state_options('v', fix_initial=True, lower=0.0,
+    phase.set_state_options('v', fix_initial=True, lower=0.01,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
                             ref=1.0, defect_scaler=1.0, units='rad')
 
-    phase.set_state_options('m', fix_initial=True, lower=10.0, upper=1.0E5,
+    phase.set_state_options('m', fix_initial=True, lower=1e3, upper=1.0E6,
                             scaler=1.0E-3, defect_scaler=1.0E-3)
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    phase.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
-    phase.add_control('throttle', val=1.0, dynamic=True, opt=True)
+    phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
 
     phase.add_boundary_constraint('h', loc='final', equals=0., scaler=1.0E-3, units='m')
-    # phase.add_boundary_constraint('aero.mach', loc='final', equals=0.05, units=None)
+    phase.add_boundary_constraint('r', loc='final', equals=1e5, units=None)
     # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    phase.add_path_constraint(name='aero.mach', lower=0., upper=.9)
+    phase.add_path_constraint(name='aero.mach', lower=0.01, upper=.9)
     phase.add_path_constraint(name='prop.m_dot', upper=0.)
+    phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
+    phase.add_path_constraint(name='m', lower=1e4)
 
     phase.set_objective('time', loc='final', ref=10.0)
+    # phase.set_objective('m', loc='final', ref=-100.0)
+    # phase.set_objective('r', loc='final', ref=-100000.0)
 
     if top_level_densejacobian:
         p.model.jacobian = CSCJacobian()
@@ -81,23 +85,35 @@ def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     # p.driver.add_recorder(SqliteRecorder('out.db'))
     p.setup(mode='fwd', check=True)
+    # from openmdao.api import view_model
+    # view_model(p)
+
+    hxs = np.linspace(0., 100.)
+    hys = np.ones(hxs.shape) * 1e4
+    hys[0] = hys[-1] = 0.
 
     p['phase.t_initial'] = 0.0
     p['phase.t_duration'] = 100.
-    p['phase.states:r'] = phase.interpolate(ys=[0.0, 4.e5], nodes='disc')
-    p['phase.states:h'] = phase.interpolate(ys=[0., 1000.], nodes='disc')
+    # p['phase.states:r'] = phase.interpolate(ys=[0.0, 1.e6], nodes='disc')
+    p['phase.states:h'] = phase.interpolate(xs=hxs, ys=hys, nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[200., 200.], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[2e3, 1e3], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[2e4, 1e4], nodes='disc')
     p['phase.controls:alpha'] = phase.interpolate(ys=[0., 0.], nodes='all')
 
     return p
 
 
 if __name__ == '__main__':
-    p = reg_time_climb_problem(optimizer='SNOPT', num_seg=3, transcription_order=5, thrust_model='smt')
+    p = reg_time_climb_problem(optimizer='SNOPT', num_seg=3, transcription_order=3, thrust_model='smt')
 
     p.run_model()
+    exp_out = p.model.phase.simulate(times='disc')
+    p['phase.states:r'] = np.atleast_2d(exp_out.get_values('r')).T
+    p['phase.states:h'] = np.atleast_2d(exp_out.get_values('h')).T
+    p['phase.states:v'] = np.atleast_2d(exp_out.get_values('v')).T
+    p['phase.states:gam'] = np.atleast_2d(exp_out.get_values('gam')).T
+    p['phase.states:m'] = np.atleast_2d(exp_out.get_values('m')).T
     # p.check_partials(compact_print=True)
     # exit()
     p.run_driver()
@@ -127,13 +143,13 @@ if __name__ == '__main__':
     axarr[2].set_xlabel('range')
     axarr[2].set_ylabel('mass')
 
-    if 0:
+    if 1:
         exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 50))
-        time2 = p.model.phase.get_values('time', nodes='all')
-        m2 = p.model.phase.get_values('m', nodes='all')
-        mach2 = p.model.phase.get_values('aero.mach', nodes='all')
-        h2 = p.model.phase.get_values('h', nodes='all')
-        r2 = p.model.phase.get_values('r', nodes='all')
+        time2 = exp_out.get_values('time')
+        m2 = exp_out.get_values('m')
+        mach2 = exp_out.get_values('aero.mach')
+        h2 = exp_out.get_values('h')
+        r2 = exp_out.get_values('r')
         axarr[0].plot(r2, h2)
         axarr[1].plot(r2, mach2)
         axarr[2].plot(r2, m2)

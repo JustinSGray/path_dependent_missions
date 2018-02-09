@@ -21,16 +21,15 @@ class MinTimeClimbODE(ODEFunction):
         self.declare_time(units='s')
 
         self.declare_state('r', units='m', rate_source='flight_dynamics.r_dot')
-        self.declare_state('h', units='m', rate_source='flight_dynamics.h_dot', targets=['h'])
+        self.declare_state('h', units=,m'm', rate_source='flight_dynamics.h_dot', targets=['h'])
         self.declare_state('v', units='m/s', rate_source='flight_dynamics.v_dot', targets=['v'])
         self.declare_state('gam', units='rad', rate_source='flight_dynamics.gam_dot',
                            targets=['gam'])
         self.declare_state('m', units='kg', rate_source='prop.m_dot', targets=['m'])
 
-        self.declare_parameter('alpha', targets=['alpha'], units='rad')
-        # self.declare_parameter('alpha', targets=['alpha', 'aero.OAS_group.alpha_rad'], units='rad')
+        # self.declare_parameter('alpha', targets=['alpha'], units='rad')
+        self.declare_parameter('alpha', targets=['alpha', 'aero.OAS_group.alpha_rad'], units='rad')
 
-        self.declare_parameter('Isp', targets=['Isp'], units='s')
         self.declare_parameter('S', targets=['S'], units='m**2')
         self.declare_parameter('throttle', targets=['throttle'], units=None)
 
@@ -63,14 +62,16 @@ class BrysonMinTimeClimbSystem(Group):
 
         self.add_subsystem(name='aero',
                            subsys=AeroGroup(num_nodes=nn),
-                           promotes_inputs=['v', 'alpha', 'S'])
+                           # promotes_inputs=['v', 'alpha', 'S'],
+                           promotes_inputs=['v', 'S'],
+                           )
 
         self.connect('atmos.sos', 'aero.sos')
         self.connect('atmos.rho', 'aero.rho')
 
         self.add_subsystem(name='prop',
                            subsys=PropGroup(num_nodes=nn, thrust_model=thrust_model),
-                           promotes_inputs=['h', 'Isp', 'throttle'])
+                           promotes_inputs=['h', 'throttle'])
 
         self.connect('aero.mach', 'prop.mach')
 
