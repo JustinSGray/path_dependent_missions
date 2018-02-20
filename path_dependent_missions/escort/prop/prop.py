@@ -41,17 +41,12 @@ class PropGroup(Group):
     def initialize(self):
         self.metadata.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
-        self.metadata.declare('thrust_model', values=['bryson', 'mbi', 'metamodel', 'smt'],
-                              default='metamodel', desc='Type of thrust model to be used')
 
     def setup(self):
         nn = self.metadata['num_nodes']
 
-        if self.metadata['thrust_model'] == 'smt':
-            smt_prop_model = get_prop_smt_model()
-            max_thrust_comp = SMTMaxThrustComp(num_nodes=nn, propulsion_model=smt_prop_model)
-        else:
-            max_thrust_comp = MaxThrustComp(num_nodes=nn, extrapolate=True, method='cubic')
+        smt_prop_model = get_prop_smt_model()
+        max_thrust_comp = SMTMaxThrustComp(num_nodes=nn, propulsion_model=smt_prop_model)
 
         self.add_subsystem(name='max_thrust_comp',
                            subsys=max_thrust_comp,

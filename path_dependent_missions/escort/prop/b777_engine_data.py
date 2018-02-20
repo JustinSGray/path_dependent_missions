@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from smt.methods import RMTC
+from smt.surrogate_models import RMTC
 
 
 def get_b777_engine():
@@ -291,9 +291,11 @@ def plot_b777_engine(xt, yt, limits, interp):
 def get_prop_smt_model():
     xt, yt, dyt_dxt, xlimits = get_b777_engine()
 
+    this_dir = os.path.split(__file__)[0]
+
     interp = RMTC(num_elements=6, xlimits=xlimits, nonlinear_maxiter=20, approx_order=2,
         energy_weight=0., regularization_weight=0., extrapolate=True, print_global=False,
-        # data_dir='_smt_cache/',
+        data_dir=os.path.join(this_dir, '_smt_cache'),
     )
     interp.set_training_values(xt, yt)
     interp.set_training_derivatives(xt, dyt_dxt[:, :, 0], 0)

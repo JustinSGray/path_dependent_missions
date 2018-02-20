@@ -13,29 +13,22 @@ _phase_map = {'gauss_lobatto': GaussLobattoPhase,
 
 
 def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
-                           transcription='gauss_lobatto', alpha_guess=False,
-                           top_level_densejacobian=True, simul_derivs=False,
-                           thrust_model='bryson'):
+                           transcription='gauss_lobatto'):
 
     p = Problem(model=Group())
 
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = optimizer
-    # p.driver.options['simul_derivs'] = simul_derivs
     if optimizer == 'SNOPT':
-        p.driver.opt_settings['Major iterations limit'] = 1000
+        p.driver.opt_settings['Major iterations limit'] = 100
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-9
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-9
-        p.driver.opt_settings['Verify level'] = -1
-        # p.driver.opt_settings['Function precision'] = 1.0E-6
-        # p.driver.opt_settings['Linesearch tolerance'] = 0.10
-        # p.driver.opt_settings['Major step limit'] = 0.5
-
+        p.driver.opt_settings['Verify level'] = 3
 
     phase_class = _phase_map[transcription]
 
-    phase = phase_class(ode_function=MinTimeClimbODE(thrust_model=thrust_model),
+    phase = phase_class(ode_function=MinTimeClimbODE(),
                         num_segments=num_seg,
                         transcription_order=transcription_order,
                         compressed=False)
@@ -45,7 +38,7 @@ def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     phase.set_time_options(opt_initial=False, duration_bounds=(50, 1e5),
                            duration_ref=100.0)
 
-    phase.set_state_options('r', fix_initial=True, fix_final=True, lower=0, upper=1.0E8,
+    phase.set_state_options('r', fix_initial=True, lower=0, upper=1.0E6,
                             scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
 
     phase.set_state_options('h', fix_initial=True, lower=0, upper=14000.0,
@@ -63,49 +56,59 @@ def reg_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
                       dynamic=True, rate_continuity=True)
 
-    phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
+    phase.add_control('S', val=383.68, units='m**2', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
 
-    phase.add_boundary_constraint('h', loc='final', equals=0., scaler=1.0E-3, units='m')
-    phase.add_boundary_constraint('r', loc='final', equals=1e5, units=None)
+    phase.add_boundary_constraint('h', loc='final', equals=1e3, scaler=1.0E-3, units='m')
+    phase.add_boundary_constraint('r', loc='final', equals=15000, units=None)
     # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    phase.add_path_constraint(name='aero.mach', lower=0.01, upper=.9)
-    phase.add_path_constraint(name='prop.m_dot', upper=0.)
-    phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
-    phase.add_path_constraint(name='m', lower=1e4)
+    phase.add_path_constraint(name='aero.mach', lower=0.01, upper=.8)
+    # phase.add_path_constraint(name='prop.m_dot', upper=0.)
+    # phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
+    # phase.add_path_constraint(name='m', lower=1e4)
+    # phase.add_path_constraint(name='h', lower=0.)
 
     phase.set_objective('time', loc='final', ref=10.0)
     # phase.set_objective('m', loc='final', ref=-100.0)
     # phase.set_objective('r', loc='final', ref=-100000.0)
 
-    if top_level_densejacobian:
-        p.model.jacobian = CSCJacobian()
-        p.model.linear_solver = DirectSolver()
+    p.model.jacobian = CSCJacobian()
+    p.model.linear_solver = DirectSolver()
 
     # p.driver.add_recorder(SqliteRecorder('out.db'))
     p.setup(mode='fwd', check=True)
     # from openmdao.api import view_model
     # view_model(p)
 
-    hxs = np.linspace(0., 100.)
-    hys = np.ones(hxs.shape) * 1e4
-    hys[0] = hys[-1] = 0.
-
     p['phase.t_initial'] = 0.0
-    p['phase.t_duration'] = 100.
-    # p['phase.states:r'] = phase.interpolate(ys=[0.0, 1.e6], nodes='disc')
-    p['phase.states:h'] = phase.interpolate(xs=hxs, ys=hys, nodes='disc')
-    p['phase.states:v'] = phase.interpolate(ys=[200., 200.], nodes='disc')
+    p['phase.t_duration'] = 50.
+
+    p['phase.states:r'] = phase.interpolate(ys=[0.0, 12000], nodes='disc')
+    p['phase.states:h'] = phase.interpolate(ys=[1e3, 1e3], nodes='disc')
+    p['phase.states:v'] = phase.interpolate(ys=[250., 250.], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[2e4, 1e4], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[2e4, 1.9e4], nodes='disc')
     p['phase.controls:alpha'] = phase.interpolate(ys=[0., 0.], nodes='all')
+    p['phase.states:r'] = phase.interpolate(ys=[0.0, 12000], nodes='disc')
+
+    p['phase.states:h'][:] = 1e3
+    p['phase.rhs_disc.aero.mach_comp.mach'][:] = .8
+    p['phase.states:v'][:] = 267.
+
+    # # Create CRM geometry
+    # for phase_name in ['phase.rhs_disc.aero.OAS_group.', 'phase.rhs_col.aero.OAS_group.']:
+    #     p[phase_name + 'wing_chord_dv'] = np.array([ 107.4 , 285.8 , 536.2 , 285.8 , 107.4 ]) * 0.0254
+    #     p[phase_name + 'wing_twist_dv'] = np.array([ -3.75 ,  0.76 ,  6.72 ,  0.76 , -3.75 ]) * np.pi / 180.
+    #     p[phase_name + 'wing_sec_x_dv'] = np.array([  1780 ,  1226 ,   904 ,  1226 ,  1780 ]) * 0.0254
+    #     p[phase_name + 'wing_sec_y_dv'] = np.array([ 263.8 , 181.1 , 174.1 , 181.1 , 263.8 ]) * 0.0254
+    #     p[phase_name + 'wing_sec_z_dv'] = np.array([ -1157 ,  -428 ,     0 ,   428 ,  1157 ]) * 0.0254
 
     return p
 
 
 if __name__ == '__main__':
-    p = reg_time_climb_problem(optimizer='SNOPT', num_seg=3, transcription_order=3, thrust_model='smt')
+    p = reg_time_climb_problem(optimizer='SNOPT', num_seg=9, transcription_order=3)
 
     p.run_model()
     exp_out = p.model.phase.simulate(times='disc')
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     axarr[2].set_ylabel('mass')
 
     if 1:
-        exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 50))
+        exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 20))
         time2 = exp_out.get_values('time')
         m2 = exp_out.get_values('m')
         mach2 = exp_out.get_values('aero.mach')

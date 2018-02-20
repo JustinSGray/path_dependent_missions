@@ -14,14 +14,13 @@ from pointer.models.eom import FlightPathEOM2D
 
 class MinTimeClimbODE(ODEFunction):
 
-    def __init__(self, thrust_model='bryson'):
-        super(MinTimeClimbODE, self).__init__(system_class=BrysonMinTimeClimbSystem,
-                                              system_init_kwargs={'thrust_model': thrust_model})
+    def __init__(self):
+        super(MinTimeClimbODE, self).__init__(system_class=BrysonMinTimeClimbSystem)
 
         self.declare_time(units='s')
 
         self.declare_state('r', units='m', rate_source='flight_dynamics.r_dot')
-        self.declare_state('h', units=,m'm', rate_source='flight_dynamics.h_dot', targets=['h'])
+        self.declare_state('h', units='m', rate_source='flight_dynamics.h_dot', targets=['h'])
         self.declare_state('v', units='m/s', rate_source='flight_dynamics.v_dot', targets=['v'])
         self.declare_state('gam', units='rad', rate_source='flight_dynamics.gam_dot',
                            targets=['gam'])
@@ -38,11 +37,9 @@ class BrysonMinTimeClimbSystem(Group):
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('thrust_model', types=str)
 
     def setup(self):
         nn = self.metadata['num_nodes']
-        thrust_model = self.metadata['thrust_model']
 
         # # We'll use an IndepVarComp in the phase to provide Isp and reference area.
         # ivc = IndepVarComp()
@@ -70,7 +67,7 @@ class BrysonMinTimeClimbSystem(Group):
         self.connect('atmos.rho', 'aero.rho')
 
         self.add_subsystem(name='prop',
-                           subsys=PropGroup(num_nodes=nn, thrust_model=thrust_model),
+                           subsys=PropGroup(num_nodes=nn),
                            promotes_inputs=['h', 'throttle'])
 
         self.connect('aero.mach', 'prop.mach')
