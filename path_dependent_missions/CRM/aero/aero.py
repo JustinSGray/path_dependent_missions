@@ -5,7 +5,7 @@ import numpy as np
 from openmdao.api import Group, DenseJacobian
 
 from .mach_comp import MachComp
-from path_dependent_missions.escort.aero.oas_aero import OASGroup
+from path_dependent_missions.CRM.aero.oas_aero import OASGroup
 
 
 class AeroGroup(Group):

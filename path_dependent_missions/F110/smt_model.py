@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os
-from smt.surrogate_models import RMTB, RMTC
+from smt.surrogate_models import RMTB, RMTC, KRG
 
 
 def get_data():
@@ -40,6 +40,8 @@ def get_F110_interp():
         data_dir='_smt_cache/',
     )
 
+    # interp = KRG(theta0=[0.1]*3, data_dir='_smt_cache/')
+
     interp.set_training_values(xt, yt)
     interp.train()
 
@@ -55,11 +57,11 @@ if __name__ == "__main__":
     info = {'nx':3,
             'ny':2,
             'user_func':interp.predict_values,
-            'resolution':90,
-            'plot_size':10,
+            'resolution':150,
+            'plot_size':12,
             'dimension_names':[
                 'Mach number',
-                'Altitude',
+                'Altitude, 10k ft',
                 'Throttle'],
             'bounds':xlimits.tolist(),
             'X_dimension':0,

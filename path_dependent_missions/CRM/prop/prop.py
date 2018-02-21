@@ -7,7 +7,7 @@ from .thrust_comp import ThrustComp
 from .SFC_comp import SFCComp
 from .fuel_rate_comp import FuelRateComp
 
-from path_dependent_missions.escort.prop.b777_engine_data import get_prop_smt_model
+from path_dependent_missions.CRM.prop.b777_engine_data import get_prop_smt_model
 
 
 class PropGroup(Group):

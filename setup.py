@@ -17,6 +17,7 @@ setup(name='path_dependent_missions',
       license='Apache License, Version 2.0',
       packages=[
         'path_dependent_missions',
+        'path_dependent_missions/CRM',
         'path_dependent_missions/escort',
         'path_dependent_missions/simple_heat',
         ],

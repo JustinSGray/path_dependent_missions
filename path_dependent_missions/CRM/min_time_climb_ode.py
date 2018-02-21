@@ -7,8 +7,8 @@ from openmdao.api import Group, IndepVarComp
 from pointer.ode_function import ODEFunction
 
 from pointer.models.atmosphere import StandardAtmosphereGroup
-from path_dependent_missions.escort.aero import AeroGroup
-from path_dependent_missions.escort.prop import PropGroup
+from path_dependent_missions.CRM.aero import AeroGroup
+from path_dependent_missions.CRM.prop import PropGroup
 from pointer.models.eom import FlightPathEOM2D
 
 

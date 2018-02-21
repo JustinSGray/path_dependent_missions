@@ -6,7 +6,7 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 
 from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 
-from path_dependent_missions.escort.min_time_climb_ode import MinTimeClimbODE
+from path_dependent_missions.CRM.min_time_climb_ode import MinTimeClimbODE
 
 _phase_map = {'gauss_lobatto': GaussLobattoPhase,
               'radau_ps': RadauPseudospectralPhase}
@@ -60,7 +60,7 @@ phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi
 
 phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
 
-phase.add_boundary_constraint('h', loc='final', equals=1e3, scaler=1.0E-3, units='m')
+phase.add_boundary_constraint('h', loc='final', equals=5e3, scaler=1.0E-3, units='m')
 phase.add_boundary_constraint('r', loc='final', equals=15., units=None)
 # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
@@ -126,8 +126,9 @@ mach = p.model.phase.get_values('aero.mach', nodes='all')
 h = p.model.phase.get_values('h', nodes='all')
 r = p.model.phase.get_values('r', nodes='all')
 alpha = p.model.phase.get_values('alpha', nodes='all')
+gam = p.model.phase.get_values('gam', nodes='all')
 
-f, axarr = plt.subplots(4, sharex=True)
+f, axarr = plt.subplots(5, sharex=True)
 
 axarr[0].plot(r, h, 'ko')
 axarr[0].set_xlabel('range')
@@ -145,6 +146,10 @@ axarr[3].plot(r, alpha, 'ko')
 axarr[3].set_xlabel('range')
 axarr[3].set_ylabel('alpha')
 
+axarr[4].plot(r, gam, 'ko')
+axarr[4].set_xlabel('range')
+axarr[4].set_ylabel('gamma')
+
 if 1:
     exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 20))
     time2 = exp_out.get_values('time')
@@ -153,9 +158,11 @@ if 1:
     h2 = exp_out.get_values('h')
     r2 = exp_out.get_values('r')
     alpha2 = exp_out.get_values('alpha')
+    gam2 = exp_out.get_values('gam')
     axarr[0].plot(r2, h2)
     axarr[1].plot(r2, mach2)
     axarr[2].plot(r2, m2)
     axarr[3].plot(r2, alpha2)
+    axarr[4].plot(r2, gam2)
 
 plt.show()
