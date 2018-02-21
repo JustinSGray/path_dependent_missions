@@ -4,13 +4,6 @@ import numpy as np
 
 from openmdao.api import Group, DenseJacobian
 
-from .dynamic_pressure_comp import DynamicPressureComp
-from .lift_drag_force_comp import LiftDragForceComp
-from .cd0_comp import CD0Comp
-from .kappa_comp import KappaComp
-from .cla_comp import CLaComp
-from .cl_comp import CLComp
-from .cd_comp import CDComp
 from .mach_comp import MachComp
 from path_dependent_missions.escort.aero.oas_aero import OASGroup
 
@@ -46,47 +39,9 @@ class AeroGroup(Group):
                            promotes_inputs=['v', 'sos'],
                            promotes_outputs=['mach'])
 
-        self.add_subsystem(name='cd0_comp',
-                           subsys=CD0Comp(num_nodes=nn),
-                           promotes_inputs=['mach'],
-                           promotes_outputs=['CD0'])
-
-        self.add_subsystem(name='kappa_comp',
-                           subsys=KappaComp(num_nodes=nn),
-                           promotes_inputs=['mach'],
-                           promotes_outputs=['kappa'])
-
-        self.add_subsystem(name='cla_comp',
-                           subsys=CLaComp(num_nodes=nn),
-                           promotes_inputs=['mach'],
-                           promotes_outputs=['CLa'])
-
-        if 1:
-            self.add_subsystem(name='OAS_group',
-                               subsys=OASGroup(num_nodes=nn),
-                               promotes_inputs=[('rho_kg_m3', 'rho'), ('v_m_s', 'v')],
-                               )
-
-            self.connect('OAS_group.C_L', 'CL')
-            self.connect('OAS_group.C_D', 'CD')
-
-        else:
-            self.add_subsystem(name='CL_comp',
-                               subsys=CLComp(num_nodes=nn),
-                               promotes_inputs=['alpha', 'CLa'],
-                               promotes_outputs=['CL'])
-
-            self.add_subsystem(name='CD_comp',
-                               subsys=CDComp(num_nodes=nn),
-                               promotes_inputs=['CD0', 'alpha', 'CLa', 'kappa'],
-                               promotes_outputs=['CD'])
-
-        self.add_subsystem(name='q_comp',
-                           subsys=DynamicPressureComp(num_nodes=nn),
-                           promotes_inputs=['rho', 'v'],
-                           promotes_outputs=['q'])
-
-        self.add_subsystem(name='lift_drag_force_comp',
-                           subsys=LiftDragForceComp(num_nodes=nn),
-                           promotes_inputs=['CL', 'CD', 'q', 'S'],
-                           promotes_outputs=['f_lift', 'f_drag'])
+        self.add_subsystem(name='OAS_group',
+                           subsys=OASGroup(num_nodes=nn),
+                           promotes_inputs=[('rho_kg_m3', 'rho'), ('v_m_s', 'v')],
+                           promotes_outputs=[('lift', 'f_lift'), ('drag', 'f_drag'),
+                               ('C_L', 'CL'), ('C_D', 'CD')],
+                           )

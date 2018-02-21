@@ -63,6 +63,7 @@ class OASGroup(Group):
         indep_var_comp = IndepVarComp()
         indep_var_comp.add_output('Re_1e6', shape=num_nodes, val=2.)
         indep_var_comp.add_output('C_l_max', shape=num_nodes, val=1.5)
+        indep_var_comp.add_output('reference_area', shape=num_nodes, val=484.)
         self.add_subsystem('indep_var_comp', indep_var_comp, promotes=['*'])
 
         inputs_group = InputsGroup(num_nodes=num_nodes, lifting_surfaces=lifting_surfaces)
