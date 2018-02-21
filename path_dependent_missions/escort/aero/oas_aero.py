@@ -46,7 +46,7 @@ class OASGroup(Group):
         wing.initialize_mesh(num_points_x, num_points_z_half, airfoil_x=np.linspace(0., 1., num_points_x), airfoil_y=np.zeros(num_points_x))
         wing.set_mesh_parameters(distribution='sine', section_origin=.25)
         wing.set_structural_properties(E=70.e9, G=29.e9, spar_location=0.35, sigma_y=200e6, rho=2700)
-        wing.set_aero_properties(factor2=.119, factor4=-0.064, cl_factor=1.05)
+        wing.set_aero_properties(factor2=.119, factor4=-0.064, cl_factor=1.05, CD0=0.02)
 
         wing.set_chord(1., n_cp=3, order=2)
         wing.set_twist(0., n_cp=3, order=2)

@@ -2,10 +2,6 @@ from __future__ import absolute_import
 
 from openmdao.api import Group
 
-from .mdot_comp import MassFlowRateComp
-from .bryson_max_thrust_comp import BrysonMaxThrustComp
-from .mbi_max_thrust_comp import MBIMaxThrustComp
-from .max_thrust_comp import MaxThrustComp
 from .smt_thrust_comp import SMTMaxThrustComp
 from .thrust_comp import ThrustComp
 from .SFC_comp import SFCComp

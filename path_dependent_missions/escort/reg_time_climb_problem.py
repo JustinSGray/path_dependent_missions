@@ -40,8 +40,8 @@ p.model.add_subsystem('phase', phase)
 phase.set_time_options(opt_initial=False, duration_bounds=(50, 1e5),
                        duration_ref=100.0)
 
-phase.set_state_options('r', fix_initial=True, lower=0, upper=1.0E6,
-                        scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
+phase.set_state_options('r', fix_initial=True, lower=0, upper=1.0E4,
+                        scaler=1.0E-3, defect_scaler=1.0E-2, units='km')
 
 phase.set_state_options('h', fix_initial=True, lower=0, upper=14000.0,
                         scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
@@ -61,14 +61,14 @@ phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi
 phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
 
 phase.add_boundary_constraint('h', loc='final', equals=1e3, scaler=1.0E-3, units='m')
-phase.add_boundary_constraint('r', loc='final', equals=15000, units=None)
+phase.add_boundary_constraint('r', loc='final', equals=15., units=None)
 # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
 phase.add_path_constraint(name='aero.mach', lower=0.01, upper=.8)
 phase.add_path_constraint(name='prop.m_dot', upper=0.)
 phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
 # phase.add_path_constraint(name='m', lower=1e4)
-# phase.add_path_constraint(name='h', lower=0.)
+phase.add_path_constraint(name='h', lower=0.)
 
 phase.set_objective('time', loc='final', ref=10.0)
 # phase.set_objective('m', loc='final', ref=-100.0)
@@ -86,15 +86,15 @@ p.setup(mode='fwd', check=True)
 p['phase.t_initial'] = 0.0
 p['phase.t_duration'] = 50.
 
-p['phase.states:r'] = phase.interpolate(ys=[0.0, 12000], nodes='disc')
+p['phase.states:r'] = phase.interpolate(ys=[0.0, 15.], nodes='disc')
 p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-p['phase.states:m'] = phase.interpolate(ys=[2e4, 1.9e4], nodes='disc')
-p['phase.controls:alpha'] = phase.interpolate(ys=[0., 0.], nodes='all')
+p['phase.states:m'] = phase.interpolate(ys=[1e4, .9e4], nodes='disc')
+p['phase.controls:alpha'] = phase.interpolate(ys=[0.5, 0.5], nodes='all')
 
 p['phase.states:h'][:] = 1e3
 p['phase.states:v'][:] = 267.
 
-# Create CRM geometry
+# # Create CRM geometry
 # for phase_name in ['phase.rhs_disc.aero.OAS_group.', 'phase.rhs_col.aero.OAS_group.']:
 #     p[phase_name + 'wing_chord_dv'] = np.array([ 107.4 , 285.8 , 536.2 , 285.8 , 107.4 ]) * 0.0254
 #     p[phase_name + 'wing_twist_dv'] = np.array([ -3.75 ,  0.76 ,  6.72 ,  0.76 , -3.75 ]) * np.pi / 180.

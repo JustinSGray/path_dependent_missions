@@ -19,7 +19,7 @@ class MinTimeClimbODE(ODEFunction):
 
         self.declare_time(units='s')
 
-        self.declare_state('r', units='m', rate_source='flight_dynamics.r_dot')
+        self.declare_state('r', units='km', rate_source='flight_dynamics.r_dot')
         self.declare_state('h', units='m', rate_source='flight_dynamics.h_dot', targets=['h'])
         self.declare_state('v', units='m/s', rate_source='flight_dynamics.v_dot', targets=['v'])
         self.declare_state('gam', units='rad', rate_source='flight_dynamics.gam_dot',
