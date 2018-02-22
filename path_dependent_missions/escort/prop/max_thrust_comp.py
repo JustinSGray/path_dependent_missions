@@ -8,9 +8,6 @@ except ImportError:
     print("MBI is not available")
     MBI = None
 
-_FT2M = 0.3048
-
-_LBF2N = 4.4482216
 
 # Note in the data that Mach varies fastest (the first 10 datapoints correspond to Alt=0)
 # Altitude is given in ft and thrust is given in lbf

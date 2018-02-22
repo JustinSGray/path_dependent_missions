@@ -1,19 +1,21 @@
 from __future__ import print_function, division, absolute_import
+import numpy as np
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian
+    CSCJacobian, CSRJacobian, SqliteRecorder
 
 from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
 from pointer import PhaseLinkageComp
 
 from min_time_climb_ode import MinTimeClimbODE
+from path_dependent_missions.escort.read_db import read_db
 
 _phase_map = {'gauss-lobatto': GaussLobattoPhase,
               'radau-ps': RadauPseudospectralPhase}
 
 
 def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
-                           transcription='gauss-lobatto'):
+                           transcription='gauss-lobatto', meeting_altitude=15000.):
 
     p = Problem(model=Group())
 
@@ -67,7 +69,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     climb.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
-    climb.add_boundary_constraint('h', loc='final', equals=15000, scaler=1.0E-3, units='m')
+    climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     climb.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
     climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
     climb.add_boundary_constraint('time', loc='final', equals=350.0, units='s')
@@ -110,6 +112,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+
     escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
     # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
@@ -119,15 +122,13 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     escort.add_boundary_constraint('m', loc='final', equals=15000.0, units='kg')
 
     #
-    # escort.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
+    escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
     # escort.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
 
     # Maximize distance at the end of the escort
     escort.set_objective('r', loc='final', ref=-1e5)
 
     p.model.add_subsystem('escort', escort)
-
-
 
 
 
@@ -175,6 +176,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.model.jacobian = CSCJacobian()
     p.model.linear_solver = DirectSolver()
 
+    p.driver.add_recorder(SqliteRecorder('escort.db'))
     p.setup(mode='fwd', check=True)
 
     p['climb.t_initial'] = 0.0
@@ -185,7 +187,6 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['climb.states:gam'] = climb.interpolate(ys=[0.0, 0.0], nodes='disc')
     p['climb.states:m'] = climb.interpolate(ys=[19030.468, 16841.431], nodes='disc')
     p['climb.controls:alpha'] = climb.interpolate(ys=[0.0, 0.0], nodes='all')
-
 
     p['escort.t_initial'] = 300.
     p['escort.t_duration'] = 1000.
@@ -201,7 +202,10 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 if __name__ == '__main__':
     p = escort_problem(optimizer='SNOPT', num_seg=10, transcription_order=3)
-    p.run_model()
+
+    # p.run_model()
+
+
     p.run_driver()
 
 
@@ -244,7 +248,7 @@ if __name__ == '__main__':
         axarr[5].set_ylabel('throttle')
         axarr[5].set_xlabel('range')
 
-        exp_out = phase.simulate(times=np.linspace(0, p['climb.t_duration'], 20))
+        exp_out = phase.simulate(times=np.linspace(0, p['climb.t_duration'], 50))
         time2 = exp_out.get_values('time')
         m2 = exp_out.get_values('m')
         mach2 = exp_out.get_values('aero.mach')

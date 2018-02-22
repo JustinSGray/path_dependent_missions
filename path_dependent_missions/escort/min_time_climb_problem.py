@@ -13,7 +13,7 @@ _phase_map = {'gauss-lobatto': GaussLobattoPhase,
 
 def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                            transcription='gauss-lobatto',
-                           top_level_densejacobian=True):
+                           top_level_densejacobian=True, meeting_altitude=14000.):
 
     p = Problem(model=Group())
 
@@ -63,7 +63,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     phase.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
-    phase.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
+    phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     phase.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
     phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
@@ -82,7 +82,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['phase.t_initial'] = 0.0
     p['phase.t_duration'] = 298.46902
     p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
-    p['phase.states:h'] = phase.interpolate(ys=[100.0, 20000.0], nodes='disc')
+    p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
     p['phase.states:m'] = phase.interpolate(ys=[19030.468, 16841.431], nodes='disc')
