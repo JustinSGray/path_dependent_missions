@@ -6,7 +6,7 @@ from smt.surrogate_models import RMTB, RMTC, KRG
 
 
 def get_data():
-    # MN,  Alt,  PC,  Fg (total gross thrust, lbf),  Ram (ram drag, lbf),  Fueltot (lbm/sec)
+    # MN,  Alt (ft),  PC,  Fg (total gross thrust, lbf),  Ram (ram drag, lbf),  Fueltot (lbm/sec)
     data = np.loadtxt('good_output_flops')
 
     xt = data[:, :3]

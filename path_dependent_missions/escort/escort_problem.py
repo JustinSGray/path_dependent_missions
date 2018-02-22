@@ -23,6 +23,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.driver.options['optimizer'] = optimizer
     if optimizer == 'SNOPT':
         p.driver.opt_settings['Major iterations limit'] = 1000
+        p.driver.opt_settings['Iterations limit'] = 100000000
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
@@ -72,6 +73,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     climb.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
     climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
+
     climb.add_boundary_constraint('time', loc='final', equals=350.0, units='s')
 
     climb.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
@@ -123,7 +125,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     #
     escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
-    # escort.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
+    escort.add_path_constraint(name='aero.mach', equals=1.0)
 
     # Maximize distance at the end of the escort
     escort.set_objective('r', loc='final', ref=-1e5)
@@ -176,7 +178,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.model.jacobian = CSCJacobian()
     p.model.linear_solver = DirectSolver()
 
-    p.driver.add_recorder(SqliteRecorder('escort.db'))
+    # p.driver.add_recorder(SqliteRecorder('escort.db'))
+
     p.setup(mode='fwd', check=True)
 
     p['climb.t_initial'] = 0.0
@@ -192,7 +195,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['escort.t_duration'] = 1000.
     p['escort.states:r'] = escort.interpolate(ys=[111319.54, 400000.], nodes='disc')
     p['escort.states:h'] = escort.interpolate(ys=[20000., 20000.0], nodes='disc')
-    p['escort.states:v'] = escort.interpolate(ys=[283.159, 283.159], nodes='disc')
+    p['escort.states:v'] = escort.interpolate(ys=[250., 250.], nodes='disc')
     p['escort.states:gam'] = escort.interpolate(ys=[0.0, 0.0], nodes='disc')
     p['escort.states:m'] = escort.interpolate(ys=[16841.431, 15000.], nodes='disc')
     p['escort.controls:alpha'] = escort.interpolate(ys=[0.0, 0.0], nodes='all')
@@ -204,7 +207,6 @@ if __name__ == '__main__':
     p = escort_problem(optimizer='SNOPT', num_seg=10, transcription_order=3)
 
     # p.run_model()
-
 
     p.run_driver()
 
