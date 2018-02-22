@@ -6,8 +6,9 @@ from smt.surrogate_models import RMTB, RMTC, KRG
 
 
 def get_data():
+    this_dir = os.path.split(__file__)[0]
     # MN,  Alt (ft),  PC,  Fg (total gross thrust, lbf),  Ram (ram drag, lbf),  Fueltot (lbm/sec)
-    data = np.loadtxt('good_output_flops')
+    data = np.loadtxt(os.path.join(this_dir, 'good_output_flops'))
 
     xt = data[:, :3]
     net_thrust = data[:, 3] - data[:, 4]
@@ -30,14 +31,15 @@ def get_data():
     return xt, yt, xlimits
 
 def get_F110_interp():
+    this_dir = os.path.split(__file__)[0]
 
     xt, yt, xlimits = get_data()
 
     interp = RMTB(xlimits=xlimits, num_ctrl_pts=15, order=4,
         approx_order=2, nonlinear_maxiter=40, solver_tolerance=1.e-20,
         # solver='lu', derivative_solver='lu',
-        energy_weight=1.e-4, regularization_weight=0.e-18, extrapolate=False, print_global=True,
-        data_dir='_smt_cache/',
+        energy_weight=1.e-4, regularization_weight=0.e-18, extrapolate=False, print_global=False,
+        data_dir=os.path.join(this_dir, '_smt_cache'),
     )
 
     # interp = KRG(theta0=[0.1]*3, data_dir='_smt_cache/')
