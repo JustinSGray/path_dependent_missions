@@ -12,7 +12,7 @@ _phase_map = {'gauss_lobatto': GaussLobattoPhase,
               'radau_ps': RadauPseudospectralPhase}
 
 optimizer = 'SNOPT'
-num_seg = 3
+num_seg = 7
 transcription_order = 3
 transcription = 'gauss_lobatto'
 
@@ -26,7 +26,7 @@ if optimizer == 'SNOPT':
     p.driver.opt_settings['iSumm'] = 6
     p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-9
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-9
-    p.driver.opt_settings['Verify level'] = 3
+    p.driver.opt_settings['Verify level'] = -1
 
 phase_class = _phase_map[transcription]
 
@@ -60,7 +60,7 @@ phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi
 
 phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
 
-phase.add_boundary_constraint('h', loc='final', equals=5e3, scaler=1.0E-3, units='m')
+phase.add_boundary_constraint('h', loc='final', equals=10e3, scaler=1.0E-3, units='m')
 phase.add_boundary_constraint('r', loc='final', equals=15., units=None)
 # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
@@ -70,8 +70,8 @@ phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
 # phase.add_path_constraint(name='m', lower=1e4)
 phase.add_path_constraint(name='h', lower=0.)
 
-phase.set_objective('time', loc='final', ref=10.0)
-# phase.set_objective('m', loc='final', ref=-100.0)
+# phase.set_objective('time', loc='final', ref=10.0)
+phase.set_objective('m', loc='final', ref=-100.0)
 # phase.set_objective('r', loc='final', ref=-100000.0)
 
 p.model.jacobian = CSCJacobian()
@@ -88,10 +88,10 @@ p['phase.t_duration'] = 50.
 
 p['phase.states:r'] = phase.interpolate(ys=[0.0, 15.], nodes='disc')
 p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-p['phase.states:m'] = phase.interpolate(ys=[1e4, .9e4], nodes='disc')
-p['phase.controls:alpha'] = phase.interpolate(ys=[0.5, 0.5], nodes='all')
+p['phase.states:m'] = phase.interpolate(ys=[5e4, 4.9e4], nodes='disc')
+p['phase.states:h'] = phase.interpolate(ys=[1e3, 10e3], nodes='disc')
+p['phase.controls:alpha'] = phase.interpolate(ys=[0., 0.5], nodes='all')
 
-p['phase.states:h'][:] = 1e3
 p['phase.states:v'][:] = 267.
 
 # # Create CRM geometry
@@ -105,11 +105,11 @@ p['phase.states:v'][:] = 267.
 p.run_model()
 
 exp_out = p.model.phase.simulate(times='disc')
-p['phase.states:r'] = np.atleast_2d(exp_out.get_values('r')).T
-p['phase.states:h'] = np.atleast_2d(exp_out.get_values('h')).T
-p['phase.states:v'] = np.atleast_2d(exp_out.get_values('v')).T
-p['phase.states:gam'] = np.atleast_2d(exp_out.get_values('gam')).T
-p['phase.states:m'] = np.atleast_2d(exp_out.get_values('m')).T
+p['phase.states:r'] = np.atleast_2d(exp_out.get_values('r'))
+p['phase.states:h'] = np.atleast_2d(exp_out.get_values('h'))
+p['phase.states:v'] = np.atleast_2d(exp_out.get_values('v'))
+p['phase.states:gam'] = np.atleast_2d(exp_out.get_values('gam'))
+p['phase.states:m'] = np.atleast_2d(exp_out.get_values('m'))
 
 p.run_driver()
 
@@ -127,28 +127,28 @@ h = p.model.phase.get_values('h', nodes='all')
 r = p.model.phase.get_values('r', nodes='all')
 alpha = p.model.phase.get_values('alpha', nodes='all')
 gam = p.model.phase.get_values('gam', nodes='all')
+throttle = p.model.phase.get_values('throttle', nodes='all')
 
-f, axarr = plt.subplots(5, sharex=True)
+f, axarr = plt.subplots(6, sharex=True)
 
 axarr[0].plot(r, h, 'ko')
-axarr[0].set_xlabel('range')
 axarr[0].set_ylabel('altitude')
 
 axarr[1].plot(r, mach, 'ko')
-axarr[1].set_xlabel('range')
 axarr[1].set_ylabel('mach')
 
 axarr[2].plot(r, m, 'ko')
-axarr[2].set_xlabel('range')
 axarr[2].set_ylabel('mass')
 
 axarr[3].plot(r, alpha, 'ko')
-axarr[3].set_xlabel('range')
 axarr[3].set_ylabel('alpha')
 
 axarr[4].plot(r, gam, 'ko')
-axarr[4].set_xlabel('range')
 axarr[4].set_ylabel('gamma')
+
+axarr[5].plot(r, throttle, 'ko')
+axarr[5].set_ylabel('throttle')
+axarr[5].set_xlabel('range')
 
 if 1:
     exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 20))
@@ -159,10 +159,12 @@ if 1:
     r2 = exp_out.get_values('r')
     alpha2 = exp_out.get_values('alpha')
     gam2 = exp_out.get_values('gam')
+    throttle2 = exp_out.get_values('throttle')
     axarr[0].plot(r2, h2)
     axarr[1].plot(r2, mach2)
     axarr[2].plot(r2, m2)
     axarr[3].plot(r2, alpha2)
     axarr[4].plot(r2, gam2)
+    axarr[5].plot(r2, throttle2)
 
 plt.show()
