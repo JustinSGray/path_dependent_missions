@@ -84,11 +84,11 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
     escort = phase_class(ode_function=MinTimeClimbODE(),
-                        num_segments=num_seg,
+                        num_segments=num_seg*2,
                         transcription_order=transcription_order,
                         compressed=False)
 
-    escort.set_time_options(duration_bounds=(50, 400), duration_ref=100.0)
+    escort.set_time_options(duration_bounds=(50, 1000), duration_ref=100.0)
 
     escort.set_state_options('r', lower=0, upper=1.0E6,
                             scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
@@ -110,7 +110,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
-    escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
+    # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     # escort.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
     # escort.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
@@ -140,6 +141,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     linkage_comp.add_linkage(name='L01', vars=['gam'], units='rad', equals=0.0, linear=True)
     linkage_comp.add_linkage(name='L01', vars=['m'], units='kg', equals=0.0, linear=True)
     linkage_comp.add_linkage(name='L01', vars=['alpha'], units='rad', equals=0.0, linear=True)
+    linkage_comp.add_linkage(name='L01', vars=['throttle'], equals=0.0, linear=True)
 
     p.model.connect('climb.time++', 'linkages.L01_t:lhs')
     p.model.connect('escort.time--', 'linkages.L01_t:rhs')
@@ -161,6 +163,9 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     p.model.connect('climb.controls:alpha++', 'linkages.L01_alpha:lhs')
     p.model.connect('escort.controls:alpha--', 'linkages.L01_alpha:rhs')
+
+    p.model.connect('climb.controls:throttle++', 'linkages.L01_throttle:lhs')
+    p.model.connect('escort.controls:throttle--', 'linkages.L01_throttle:rhs')
 
     p.model.add_subsystem('linkages', linkage_comp)
 
@@ -188,7 +193,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['escort.states:h'] = escort.interpolate(ys=[20000., 20000.0], nodes='disc')
     p['escort.states:v'] = escort.interpolate(ys=[283.159, 283.159], nodes='disc')
     p['escort.states:gam'] = escort.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['escort.states:m'] = escort.interpolate(ys=[16841.431, 13000.], nodes='disc')
+    p['escort.states:m'] = escort.interpolate(ys=[16841.431, 15000.], nodes='disc')
     p['escort.controls:alpha'] = escort.interpolate(ys=[0.0, 0.0], nodes='all')
 
     return p
