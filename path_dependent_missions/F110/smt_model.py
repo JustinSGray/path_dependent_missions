@@ -71,7 +71,7 @@ if __name__ == "__main__":
             'scatter_points':[xt, yt],
             'dist_range': .1,
             'output_names':[
-                'Net Thrust, 10k lbf',
+                'Thrust, 10k lbf',
                 'Fuelburn, 10k lbm/sec',
             ]}
 

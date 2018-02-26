@@ -1,4 +1,7 @@
 from __future__ import print_function, division, absolute_import
+import matplotlib
+matplotlib.use('agg')
+import numpy as np
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
     CSCJacobian, CSRJacobian
@@ -13,7 +16,7 @@ _phase_map = {'gauss-lobatto': GaussLobattoPhase,
 
 def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                            transcription='gauss-lobatto',
-                           top_level_densejacobian=True, meeting_altitude=14000.):
+                           top_level_densejacobian=True, meeting_altitude=15000.):
 
     p = Problem(model=Group())
 
@@ -98,57 +101,64 @@ if __name__ == '__main__':
 
 
 
+    phase = p.model.phase
 
     # Plotting below here
     import numpy as np
-    phase = p.model.phase
     import matplotlib.pyplot as plt
+    plt.switch_backend('agg')
 
-    time = p.model.phase.get_values('time', nodes='all')
-    m = p.model.phase.get_values('m', nodes='all')
-    mach = p.model.phase.get_values('aero.mach', nodes='all')
-    h = p.model.phase.get_values('h', nodes='all')
-    r = p.model.phase.get_values('r', nodes='all')
-    alpha = p.model.phase.get_values('alpha', nodes='all')
-    gam = p.model.phase.get_values('gam', nodes='all')
-    throttle = p.model.phase.get_values('throttle', nodes='all')
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    f, axarr = plt.subplots(4, sharex=True)
 
-    f, axarr = plt.subplots(6, sharex=True)
+    time = phase.get_values('time', nodes='all')
+    m = phase.get_values('m', nodes='all')
+    mach = phase.get_values('aero.mach', nodes='all')
+    h = phase.get_values('h', nodes='all')
+    r = phase.get_values('r', nodes='all') / 1e3
+    alpha = phase.get_values('alpha', nodes='all')
+    gam = phase.get_values('gam', nodes='all')
+    throttle = phase.get_values('throttle', nodes='all')
 
-    axarr[0].plot(r, h, 'ko')
-    axarr[0].set_ylabel('altitude')
+    pad = 90
 
-    axarr[1].plot(r, mach, 'ko')
-    axarr[1].set_ylabel('mach')
+    axarr[0].plot(r, h, 'o', color=colors[0])
+    axarr[0].set_ylabel('altitude, m', rotation='horizontal', horizontalalignment='left', labelpad=pad)
+    axarr[0].set_yticks([0., 15000.])
 
-    axarr[2].plot(r, m, 'ko')
-    axarr[2].set_ylabel('mass')
+    axarr[1].plot(r, mach, 'o', color=colors[0])
+    axarr[1].set_ylabel('mach', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-    axarr[3].plot(r, alpha, 'ko')
-    axarr[3].set_ylabel('alpha')
+    axarr[2].plot(r, m, 'o', color=colors[0])
+    axarr[2].set_ylabel('mass, kg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
+    axarr[2].set_yticks([17695.2, 19000.])
 
-    axarr[4].plot(r, gam, 'ko')
-    axarr[4].set_ylabel('gamma')
+    axarr[3].plot(r, alpha, 'o', color=colors[0])
+    axarr[3].set_ylabel('alpha, deg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-    axarr[5].plot(r, throttle, 'ko')
-    axarr[5].set_ylabel('throttle')
-    axarr[5].set_xlabel('range')
+    # axarr[4].plot(r, gam, 'o', color=colors[i])
+    # axarr[4].set_ylabel('gamma')
 
-    if 1:
-        exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 20))
-        time2 = exp_out.get_values('time')
-        m2 = exp_out.get_values('m')
-        mach2 = exp_out.get_values('aero.mach')
-        h2 = exp_out.get_values('h')
-        r2 = exp_out.get_values('r')
-        alpha2 = exp_out.get_values('alpha')
-        gam2 = exp_out.get_values('gam')
-        throttle2 = exp_out.get_values('throttle')
-        axarr[0].plot(r2, h2)
-        axarr[1].plot(r2, mach2)
-        axarr[2].plot(r2, m2)
-        axarr[3].plot(r2, alpha2)
-        axarr[4].plot(r2, gam2)
-        axarr[5].plot(r2, throttle2)
+    # axarr[5].plot(r, throttle, 'o', color=colors[i])
+    # axarr[5].set_ylabel('throttle')
 
-    plt.show()
+    axarr[-1].set_xlabel('range, km')
+
+    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 50))
+    time2 = exp_out.get_values('time')
+    m2 = exp_out.get_values('m')
+    mach2 = exp_out.get_values('aero.mach')
+    h2 = exp_out.get_values('h')
+    r2 = exp_out.get_values('r') / 1e3
+    alpha2 = exp_out.get_values('alpha')
+    gam2 = exp_out.get_values('gam')
+    throttle2 = exp_out.get_values('throttle')
+    axarr[0].plot(r2, h2, color=colors[0])
+    axarr[1].plot(r2, mach2, color=colors[0])
+    axarr[2].plot(r2, m2, color=colors[0])
+    axarr[3].plot(r2, alpha2, color=colors[0])
+    # axarr[4].plot(r2, gam2, color=colors[i])
+    # axarr[5].plot(r2, throttle2, color=colors[i])
+
+    # plt.tight_layout()
+    plt.savefig('min_time.pdf', bbox_inches='tight')
