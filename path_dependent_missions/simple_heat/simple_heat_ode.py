@@ -4,14 +4,15 @@ import numpy as np
 
 from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, DenseJacobian, DirectSolver
 
-from pointer.ode_function import ODEFunction
+from dymos import ODEOptions
+
 from path_dependent_missions.simple_heat.tank_comp import TankComp
 from path_dependent_missions.simple_heat.heat_exchanger_comp import HeatExchangerComp
 from path_dependent_missions.simple_heat.fuel_burner_comp import FuelBurnerComp
 from path_dependent_missions.simple_heat.power_comp import PowerComp
 
 
-class SimpleHeatODE(ODEFunction):
+class SimpleHeatODE(Group):
     """
     Defines the ODE for the fuel circulation problem.
     Here we define the states and parameters (controls) for the problem.
@@ -21,26 +22,16 @@ class SimpleHeatODE(ODEFunction):
     energy : energy required to pump the fuel in the system
     """
 
-    def __init__(self, q_tank, q_hx1, q_hx2):
-        super(SimpleHeatODE, self).__init__(system_class=SimpleHeatSystem,
-                                          system_init_kwargs={'q_tank': q_tank,
-                                                              'q_hx1': q_hx1,
-                                                              'q_hx2': q_hx2})
+    ode_options = ODEOptions()
 
-        self.declare_time(units='s')
+    ode_options.declare_time(units='s')
 
-        self.declare_state('m', units='kg', rate_source='m_dot', targets=['m'])
-        self.declare_state('T', units='K', rate_source='T_dot', targets=['T'])
-        self.declare_state('energy', units='J', rate_source='power')
+    ode_options.declare_state('m', units='kg', rate_source='m_dot', targets=['m'])
+    ode_options.declare_state('T', units='K', rate_source='T_dot', targets=['T'])
+    ode_options.declare_state('energy', units='J', rate_source='power')
 
-        self.declare_parameter('m_flow', targets=['m_flow'], units='kg/s')
-        self.declare_parameter('m_burn', targets=['m_burn'], units='kg/s')
-
-
-class SimpleHeatSystem(Group):
-    """
-    Set up an OpenMDAO Group for all of the thermal components.
-    """
+    ode_options.declare_parameter('m_flow', targets=['m_flow'], units='kg/s')
+    ode_options.declare_parameter('m_burn', targets=['m_burn'], units='kg/s')
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)

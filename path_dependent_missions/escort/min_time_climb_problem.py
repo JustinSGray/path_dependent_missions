@@ -6,12 +6,9 @@ import numpy as np
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
     CSCJacobian, CSRJacobian
 
-from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
+from dymos import Phase
 
 from min_time_climb_ode import MinTimeClimbODE
-
-_phase_map = {'gauss-lobatto': GaussLobattoPhase,
-              'radau-ps': RadauPseudospectralPhase}
 
 
 def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
@@ -32,9 +29,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Linesearch tolerance'] = 0.90
         p.driver.opt_settings['Major step limit'] = 0.5
 
-    phase_class = _phase_map[transcription]
-
-    phase = phase_class(ode_function=MinTimeClimbODE(),
+    phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
                         transcription_order=transcription_order,
                         compressed=False)

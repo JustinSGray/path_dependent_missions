@@ -4,18 +4,13 @@ import numpy as np
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
     CSCJacobian, CSRJacobian, SqliteRecorder
 
-from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
+from dymos import Phase
 
 from path_dependent_missions.CRM.min_time_climb_ode import MinTimeClimbODE
-
-_phase_map = {'gauss_lobatto': GaussLobattoPhase,
-              'radau_ps': RadauPseudospectralPhase}
 
 optimizer = 'SNOPT'
 num_seg = 7
 transcription_order = 3
-transcription = 'gauss_lobatto'
-
 
 p = Problem(model=Group())
 
@@ -28,12 +23,11 @@ if optimizer == 'SNOPT':
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-9
     p.driver.opt_settings['Verify level'] = -1
 
-phase_class = _phase_map[transcription]
-
-phase = phase_class(ode_function=MinTimeClimbODE(),
-                    num_segments=num_seg,
-                    transcription_order=transcription_order,
-                    compressed=False)
+phase = Phase('gauss-lobatto',
+              ode_class=MinTimeClimbODE,
+              num_segments=num_seg,
+              transcription_order=transcription_order,
+              compressed=False)
 
 p.model.add_subsystem('phase', phase)
 

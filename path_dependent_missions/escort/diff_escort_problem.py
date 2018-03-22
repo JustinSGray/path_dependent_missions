@@ -7,8 +7,8 @@ import numpy as np
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
     CSCJacobian, CSRJacobian, SqliteRecorder
 
-from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
-from pointer import PhaseLinkageComp
+from dymos import Phase
+from dymos.phases.components import PhaseLinkageComp
 
 from min_time_climb_ode import MinTimeClimbODE
 from path_dependent_missions.escort.read_db import read_db
@@ -44,7 +44,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
 
-    climb = phase_class(ode_function=MinTimeClimbODE(),
+    climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
                         transcription_order=transcription_order,
                         compressed=False)
@@ -90,8 +90,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
 
-    escort = phase_class(ode_function=MinTimeClimbODE(),
-                        num_segments=num_seg,
+    escort = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
+                        num_segments=num_seg*2,
                         transcription_order=transcription_order,
                         compressed=False)
 

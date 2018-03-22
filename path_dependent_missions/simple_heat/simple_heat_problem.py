@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
     CSCJacobian, CSRJacobian, SqliteRecorder
 
-from pointer.phases import GaussLobattoPhase, RadauPseudospectralPhase
+from dymos import Phase
 
 from path_dependent_missions.simple_heat.simple_heat_ode import SimpleHeatODE
 import numpy as np
@@ -47,8 +47,8 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     p.driver.opt_settings['Verify level'] = -1
 
     # Set up the phase for the defined ODE function, can be LGR or LGL
-    # phase = RadauPseudospectralPhase(ode_function=SimpleHeatODE(), num_segments=num_seg, transcription_order=order, compressed=False)
-    phase = GaussLobattoPhase(ode_function=SimpleHeatODE(q_tank=q_tank, q_hx1=q_hx1, q_hx2=q_hx2), num_segments=num_seg, transcription_order=order, compressed=False)
+    phase = Phase('gauss-lobatto', ode_class=SimpleHeatODE,
+                  ode_init_kwargs={'q_tank': q_tank, 'q_hx1': q_hx1, 'q_hx2': q_hx2}, num_segments=num_seg, transcription_order=order, compressed=False)
 
     # Do not allow the time to vary during the optimization
     phase.set_time_options(opt_initial=False, opt_duration=False)

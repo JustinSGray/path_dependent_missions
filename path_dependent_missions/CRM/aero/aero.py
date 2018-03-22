@@ -41,7 +41,7 @@ class AeroGroup(Group):
 
         self.add_subsystem(name='OAS_group',
                            subsys=OASGroup(num_nodes=nn),
-                           promotes_inputs=[('rho_kg_m3', 'rho'), ('v_m_s', 'v')],
+                           promotes_inputs=[('rho', 'rho'), ('v', 'v'), 'alpha'],
                            promotes_outputs=[('lift', 'f_lift'), ('drag', 'f_drag'),
                                ('C_L', 'CL'), ('C_D', 'CD')],
                            )
