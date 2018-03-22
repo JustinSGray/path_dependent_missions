@@ -27,7 +27,6 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.90
-        p.driver.opt_settings['Major step limit'] = 0.5
 
     phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
@@ -58,19 +57,18 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    phase.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
-    phase.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
+    phase.add_boundary_constraint('aero.mach', loc='final', equals=.8, units=None)
     phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     phase.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
 
     # Minimize time at the end of the phase
-    phase.set_objective('time', loc='final', ref=100.0)
-    # phase.set_objective('m', loc='final', ref=-10000.0)
+    phase.add_objective('time', loc='final', ref=100.0)
+    # phase.add_objective('m', loc='final', ref=-10000.0)
 
     if top_level_densejacobian:
         p.model.jacobian = CSCJacobian()
@@ -85,13 +83,13 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
     p['phase.states:m'] = phase.interpolate(ys=[19030.468, 16841.431], nodes='disc')
-    p['phase.controls:alpha'] = phase.interpolate(ys=[0.0, 0.0], nodes='all')
+    # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     return p
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(optimizer='SNOPT', num_seg=10, transcription_order=3)
+    p = min_time_climb_problem(optimizer='SNOPT', num_seg=15, transcription_order=3)
     p.run_model()
     p.run_driver()
 

@@ -1,6 +1,6 @@
 from __future__ import print_function, division, absolute_import
 import matplotlib
-matplotlib.use('agg')
+# matplotlib.use('agg')
 import numpy as np
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
@@ -13,7 +13,7 @@ from min_time_climb_ode import MinTimeClimbODE
 from path_dependent_missions.escort.read_db import read_db
 
 
-def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
+def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
                            transcription='gauss-lobatto', meeting_altitude=15000.):
 
     p = Problem(model=Group())
@@ -57,20 +57,19 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     climb.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    climb.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
-    climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
-    climb.add_boundary_constraint('aero.mach', loc='final', equals=.80, units=None)
-    climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
+    # climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
+    # climb.add_boundary_constraint('aero.mach', loc='final', equals=.80, units=None)
+    # climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    climb.add_boundary_constraint('time', loc='final', equals=68.0, units='s')
+    climb.add_boundary_constraint('time', loc='final', upper=67., units='s')
 
     climb.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     climb.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
 
     # Minimize time at the end of the climb
-    # climb.set_objective('time', loc='final', ref=100.0)
+    # climb.add_objective('time', loc='final', ref=100.0)
 
     p.model.add_subsystem('climb', climb)
 
@@ -103,7 +102,6 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    escort.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
 
     # escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
     escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
@@ -111,14 +109,15 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     # escort.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
     # escort.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
     # escort.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
-    escort.add_boundary_constraint('m', loc='final', equals=15000.0, units='kg')
+    # escort.add_boundary_constraint('m', loc='final', lower=14000.0, units='kg')
 
-    #
     # escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
     # escort.add_path_constraint(name='aero.mach', equals=1.0)
 
     # Maximize distance at the end of the escort
-    escort.set_objective('r', loc='final', ref=-1e5)
+    # escort.add_objective('r', loc='final', ref=-1e5)
+    escort.add_objective('time', loc='final', ref=-1e5)
+
 
     p.model.add_subsystem('escort', escort)
 
@@ -170,7 +169,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     # p.driver.add_recorder(SqliteRecorder('escort.db'))
 
-    p.setup(check=True)
+    p.setup(check=True, force_alloc_complex=True)
 
     p['climb.t_initial'] = 0.0
     p['climb.t_duration'] = 298.46902
@@ -221,7 +220,7 @@ if __name__ == '__main__':
     # Plotting below here
     import numpy as np
     import matplotlib.pyplot as plt
-    plt.switch_backend('agg')
+    # plt.switch_backend('agg')
 
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     f, axarr = plt.subplots(6, sharex=True)
@@ -274,4 +273,5 @@ if __name__ == '__main__':
         axarr[4].plot(r2, gam2, color=colors[i])
         axarr[5].plot(r2, throttle2, color=colors[i])
 
-    plt.savefig('escort.pdf')
+    # plt.savefig('escort.pdf')
+    plt.show()
