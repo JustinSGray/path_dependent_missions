@@ -70,7 +70,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     climb.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    climb.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    climb.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')

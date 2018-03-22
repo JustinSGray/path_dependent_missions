@@ -24,23 +24,16 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = optimizer
     if optimizer == 'SNOPT':
-        p.driver.opt_settings['Major iterations limit'] = 1000
+        p.driver.opt_settings['Major iterations limit'] = 100
         p.driver.opt_settings['Iterations limit'] = 100000000
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
         p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
-        p.driver.opt_settings['Linesearch tolerance'] = 0.10
-        p.driver.opt_settings['Major step limit'] = 0.5
+        p.driver.opt_settings['Linesearch tolerance'] = .9
 
     phase_class = _phase_map[transcription]
-
-
-
-
-
-
 
     climb = phase_class(ode_function=MinTimeClimbODE(),
                         num_segments=num_seg,
@@ -69,14 +62,14 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     climb.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    climb.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    climb.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
-    climb.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
+    climb.add_boundary_constraint('aero.mach', loc='final', equals=.80, units=None)
     climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    climb.add_boundary_constraint('time', loc='final', equals=350.0, units='s')
+    climb.add_boundary_constraint('time', loc='final', equals=68.0, units='s')
 
     climb.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     climb.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
@@ -94,7 +87,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                         transcription_order=transcription_order,
                         compressed=False)
 
-    escort.set_time_options(duration_bounds=(50, 1000), duration_ref=100.0)
+    escort.set_time_options(duration_bounds=(50, 10000), duration_ref=100.0)
 
     escort.set_state_options('r', lower=0, upper=1.0E6,
                             scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
@@ -115,10 +108,10 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    escort.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
 
-    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
-    # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    # escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
+    escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     # escort.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
     # escort.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
@@ -126,8 +119,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     escort.add_boundary_constraint('m', loc='final', equals=15000.0, units='kg')
 
     #
-    escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
-    escort.add_path_constraint(name='aero.mach', equals=1.0)
+    # escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
+    # escort.add_path_constraint(name='aero.mach', equals=1.0)
 
     # Maximize distance at the end of the escort
     escort.set_objective('r', loc='final', ref=-1e5)
@@ -182,7 +175,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     # p.driver.add_recorder(SqliteRecorder('escort.db'))
 
-    p.setup(mode='fwd', check=True)
+    p.setup(check=True)
 
     p['climb.t_initial'] = 0.0
     p['climb.t_duration'] = 298.46902
@@ -191,7 +184,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['climb.states:v'] = climb.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['climb.states:gam'] = climb.interpolate(ys=[0.0, 0.0], nodes='disc')
     p['climb.states:m'] = climb.interpolate(ys=[19030.468, 16841.431], nodes='disc')
-    p['climb.controls:alpha'] = climb.interpolate(ys=[0.0, 0.0], nodes='all')
+    p['climb.controls:alpha'] = climb.interpolate(ys=[1.0, 1.], nodes='all')
 
     p['escort.t_initial'] = 300.
     p['escort.t_duration'] = 1000.
@@ -200,7 +193,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['escort.states:v'] = escort.interpolate(ys=[250., 250.], nodes='disc')
     p['escort.states:gam'] = escort.interpolate(ys=[0.0, 0.0], nodes='disc')
     p['escort.states:m'] = escort.interpolate(ys=[16841.431, 15000.], nodes='disc')
-    p['escort.controls:alpha'] = escort.interpolate(ys=[0.0, 0.0], nodes='all')
+    p['escort.controls:alpha'] = escort.interpolate(ys=[0.2, 0.2], nodes='all')
 
     return p
 
@@ -208,7 +201,22 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 if __name__ == '__main__':
     p = escort_problem(optimizer='SNOPT', num_seg=10, transcription_order=3)
 
-    # p.run_model()
+    p.run_model()
+
+    # exp_out = p.model.climb.simulate(times='disc')
+    # p['climb.states:r'] = exp_out.get_values('r')
+    # p['climb.states:h'] = exp_out.get_values('h')
+    # p['climb.states:v'] = exp_out.get_values('v')
+    # p['climb.states:gam'] = exp_out.get_values('gam')
+    # p['climb.states:m'] = exp_out.get_values('m')
+    # # p['climb.controls:alpha'] = exp_out.get_values('alpha')
+    #
+    # exp_out = p.model.escort.simulate(times='disc')
+    # p['escort.states:r'] = exp_out.get_values('r')
+    # p['escort.states:h'] = exp_out.get_values('h')
+    # p['escort.states:v'] = exp_out.get_values('v')
+    # p['escort.states:gam'] = exp_out.get_values('gam')
+    # p['escort.states:m'] = exp_out.get_values('m')
 
     p.run_driver()
 
@@ -221,7 +229,7 @@ if __name__ == '__main__':
     plt.switch_backend('agg')
 
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    f, axarr = plt.subplots(5, sharex=True)
+    f, axarr = plt.subplots(6, sharex=True)
 
     for i, phase in enumerate([p.model.climb, p.model.escort]):
 
@@ -250,8 +258,8 @@ if __name__ == '__main__':
         axarr[4].plot(r, gam, 'o', color=colors[i])
         axarr[4].set_ylabel('gamma')
 
-        # axarr[5].plot(r, throttle, 'o', color=colors[i])
-        # axarr[5].set_ylabel('throttle')
+        axarr[5].plot(r, throttle, 'o', color=colors[i])
+        axarr[5].set_ylabel('throttle')
 
         axarr[-1].set_xlabel('range, km')
 
@@ -269,6 +277,6 @@ if __name__ == '__main__':
         axarr[2].plot(r2, m2, color=colors[i])
         axarr[3].plot(r2, alpha2, color=colors[i])
         axarr[4].plot(r2, gam2, color=colors[i])
-        # axarr[5].plot(r2, throttle2, color=colors[i])
+        axarr[5].plot(r2, throttle2, color=colors[i])
 
     plt.savefig('escort.pdf')

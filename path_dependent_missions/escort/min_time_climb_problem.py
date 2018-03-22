@@ -1,6 +1,6 @@
 from __future__ import print_function, division, absolute_import
 import matplotlib
-matplotlib.use('agg')
+# matplotlib.use('agg')
 import numpy as np
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
@@ -23,13 +23,13 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = optimizer
     if optimizer == 'SNOPT':
-        p.driver.opt_settings['Major iterations limit'] = 1000
+        p.driver.opt_settings['Major iterations limit'] = 100
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
         p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
-        p.driver.opt_settings['Linesearch tolerance'] = 0.10
+        p.driver.opt_settings['Linesearch tolerance'] = 0.90
         p.driver.opt_settings['Major step limit'] = 0.5
 
     phase_class = _phase_map[transcription]
@@ -63,7 +63,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    phase.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    phase.add_control('Isp', val=5000.0, units='s', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
@@ -75,6 +75,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     # Minimize time at the end of the phase
     phase.set_objective('time', loc='final', ref=100.0)
+    # phase.set_objective('m', loc='final', ref=-10000.0)
 
     if top_level_densejacobian:
         p.model.jacobian = CSCJacobian()
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     # Plotting below here
     import numpy as np
     import matplotlib.pyplot as plt
-    plt.switch_backend('agg')
+    # plt.switch_backend('agg')
 
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     f, axarr = plt.subplots(4, sharex=True)
@@ -124,14 +125,14 @@ if __name__ == '__main__':
 
     axarr[0].plot(r, h, 'o', color=colors[0])
     axarr[0].set_ylabel('altitude, m', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-    axarr[0].set_yticks([0., 15000.])
+    # axarr[0].set_yticks([0., 15000.])
 
     axarr[1].plot(r, mach, 'o', color=colors[0])
     axarr[1].set_ylabel('mach', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
     axarr[2].plot(r, m, 'o', color=colors[0])
     axarr[2].set_ylabel('mass, kg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-    axarr[2].set_yticks([17695.2, 19000.])
+    # axarr[2].set_yticks([17695.2, 19000.])
 
     axarr[3].plot(r, alpha, 'o', color=colors[0])
     axarr[3].set_ylabel('alpha, deg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
@@ -161,4 +162,5 @@ if __name__ == '__main__':
     # axarr[5].plot(r2, throttle2, color=colors[i])
 
     # plt.tight_layout()
-    plt.savefig('min_time.pdf', bbox_inches='tight')
+    # plt.savefig('min_time.pdf', bbox_inches='tight')
+    plt.show()
