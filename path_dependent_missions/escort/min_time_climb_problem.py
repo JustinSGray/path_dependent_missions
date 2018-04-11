@@ -13,25 +13,24 @@ from min_time_climb_ode import MinTimeClimbODE
 
 def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                            transcription='gauss-lobatto',
-                           top_level_densejacobian=True, meeting_altitude=15000.):
+                           top_level_densejacobian=True, meeting_altitude=20000.):
 
     p = Problem(model=Group())
 
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = optimizer
     if optimizer == 'SNOPT':
-        p.driver.opt_settings['Major iterations limit'] = 100
+        p.driver.opt_settings['Major iterations limit'] = 500
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
         p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
-        p.driver.opt_settings['Linesearch tolerance'] = 0.90
+        p.driver.opt_settings['Linesearch tolerance'] = 0.10
 
     phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     p.model.add_subsystem('phase', phase)
 
@@ -51,16 +50,17 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                             ref=1.0, defect_scaler=1.0, units='rad')
 
     phase.set_state_options('m', fix_initial=True, lower=10.0, upper=1.0E5,
-                            scaler=1.0E-3, defect_scaler=1.0E-3)
+                            scaler=1.0E-3, defect_scaler=1.0E-3, units='kg')
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
+    # phase.add_control('Isp', val=1600, units='s', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
-    phase.add_boundary_constraint('aero.mach', loc='final', equals=.8, units=None)
+    phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
     phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
@@ -77,7 +77,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.setup(mode='fwd', check=True)
 
     p['phase.t_initial'] = 0.0
-    p['phase.t_duration'] = 298.46902
+    p['phase.t_duration'] = 200.
     p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
     p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
@@ -153,6 +153,30 @@ if __name__ == '__main__':
     axarr[3].plot(r2, alpha2, color=colors[0])
     # axarr[4].plot(r2, gam2, color=colors[i])
     # axarr[5].plot(r2, throttle2, color=colors[i])
+
+    n_points = time.shape[0]
+    col_data = np.zeros((n_points, 8))
+    col_data[:, 0] = time[:, 0]
+    col_data[:, 1] = m[:, 0]
+    col_data[:, 2] = mach[:, 0]
+    col_data[:, 3] = h[:, 0]
+    col_data[:, 4] = r[:, 0]
+    col_data[:, 5] = alpha[:, 0]
+    col_data[:, 6] = gam[:, 0]
+    col_data[:, 7] = throttle[:, 0]
+    np.savetxt('col_data_4.dat', col_data)
+
+    n_points = time2.shape[0]
+    sim_data = np.zeros((n_points, 8))
+    sim_data[:, 0] = time2[:, 0]
+    sim_data[:, 1] = m2[:, 0]
+    sim_data[:, 2] = mach2[:, 0]
+    sim_data[:, 3] = h2[:, 0]
+    sim_data[:, 4] = r2[:, 0]
+    sim_data[:, 5] = alpha2[:, 0]
+    sim_data[:, 6] = gam2[:, 0]
+    sim_data[:, 7] = throttle2[:, 0]
+    np.savetxt('sim_data_4.dat', sim_data)
 
     # plt.tight_layout()
     # plt.savefig('min_time.pdf', bbox_inches='tight')

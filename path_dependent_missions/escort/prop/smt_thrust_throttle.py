@@ -6,6 +6,8 @@ from openmdao.api import ExplicitComponent
 from path_dependent_missions.F110.smt_model import get_F110_interp
 
 
+scaler = 1.
+
 class SMTThrustComp(ExplicitComponent):
 
     def initialize(self):
@@ -39,7 +41,7 @@ class SMTThrustComp(ExplicitComponent):
 
         smt_out = self.prop_model.predict_values(self.x)
 
-        outputs['thrust'] = smt_out[:, 0] * 2 * 1e4
+        outputs['thrust'] = smt_out[:, 0] * 2 * 1e4 / scaler
         outputs['m_dot'] = -smt_out[:, 1] * 2
 
     def compute_partials(self, inputs, partials):
@@ -51,9 +53,9 @@ class SMTThrustComp(ExplicitComponent):
         h_derivs = self.prop_model.predict_derivatives(self.x, 1)
         throttle_derivs = self.prop_model.predict_derivatives(self.x, 2)
 
-        partials['thrust', 'mach'] = mach_derivs[:, 0] * 2 * 1e4
-        partials['thrust', 'h'] = h_derivs[:, 0] * 2 * 1e4 / 1e4
-        partials['thrust', 'throttle'] = throttle_derivs[:, 0] * 2 * 1e4
+        partials['thrust', 'mach'] = mach_derivs[:, 0] * 2 * 1e4 / scaler
+        partials['thrust', 'h'] = h_derivs[:, 0] * 2 * 1e4 / 1e4 / scaler
+        partials['thrust', 'throttle'] = throttle_derivs[:, 0] * 2 * 1e4 / scaler
 
         partials['m_dot', 'mach'] = -mach_derivs[:, 1] * 2
         partials['m_dot', 'h'] = -h_derivs[:, 1] * 2 / 1e4

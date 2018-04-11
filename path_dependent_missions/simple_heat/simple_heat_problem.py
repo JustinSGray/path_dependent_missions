@@ -48,7 +48,7 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
 
     # Set up the phase for the defined ODE function, can be LGR or LGL
     phase = Phase('gauss-lobatto', ode_class=SimpleHeatODE,
-                  ode_init_kwargs={'q_tank': q_tank, 'q_hx1': q_hx1, 'q_hx2': q_hx2}, num_segments=num_seg, transcription_order=order, compressed=False)
+                  ode_init_kwargs={'q_tank': q_tank, 'q_hx1': q_hx1, 'q_hx2': q_hx2}, num_segments=num_seg, transcription_order=order)
 
     # Do not allow the time to vary during the optimization
     phase.set_time_options(opt_initial=False, opt_duration=False)

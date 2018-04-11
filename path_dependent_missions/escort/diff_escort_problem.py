@@ -46,8 +46,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     climb.set_time_options(duration_bounds=(50, climb_time), duration_ref=100.0)
 
@@ -92,8 +91,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     escort = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg*2,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     escort.set_time_options(duration_bounds=(50, 10000), opt_initial=True, duration_ref=100.0)
 

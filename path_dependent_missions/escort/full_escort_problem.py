@@ -10,9 +10,6 @@ from dymos.phases.components import PhaseLinkageComp
 from min_time_climb_ode import MinTimeClimbODE
 from path_dependent_missions.escort.read_db import read_db
 
-_phase_map = {'gauss-lobatto': GaussLobattoPhase,
-              'radau-ps': RadauPseudospectralPhase}
-
 
 def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                            transcription='gauss-lobatto', meeting_altitude=15000.):
@@ -32,18 +29,9 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
         p.driver.opt_settings['Major step limit'] = 0.5
 
-    phase_class = _phase_map[transcription]
-
-
-
-
-
-
-
     climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     climb.set_time_options(opt_initial=False, duration_bounds=(50, 400),
                            duration_ref=100.0)
@@ -67,7 +55,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     climb.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    climb.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    # climb.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
@@ -86,8 +74,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     escort = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg*2,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     escort.set_time_options(duration_bounds=(50, 1000), duration_ref=100.0)
 
@@ -110,9 +97,9 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    # escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
 
-    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=False, opt=True)
+    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
     # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
@@ -125,12 +112,9 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
 
-
-
-    descent = phase_class(ode_function=MinTimeClimbODE(),
+    descent = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg*2,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     descent.set_time_options(duration_bounds=(10, 100), duration_ref=100.0)
 
@@ -153,7 +137,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     descent.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    descent.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
+    # descent.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
 
     descent.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=False, opt=True)
     # descent.add_control('throttle', val=0., dynamic=False, opt=False)

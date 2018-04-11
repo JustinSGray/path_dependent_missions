@@ -26,8 +26,7 @@ if optimizer == 'SNOPT':
 phase = Phase('gauss-lobatto',
               ode_class=MinTimeClimbODE,
               num_segments=num_seg,
-              transcription_order=transcription_order,
-              compressed=False)
+              transcription_order=transcription_order)
 
 p.model.add_subsystem('phase', phase)
 

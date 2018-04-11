@@ -38,7 +38,7 @@ class PropGroup(Group):
         self.metadata.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
         self.metadata.declare('thrust_model', values=['bryson', 'mbi', 'metamodel', 'smt'],
-                              default='smt', desc='Type of thrust model to be used')
+                              default='mbi', desc='Type of thrust model to be used')
 
     def setup(self):
         nn = self.metadata['num_nodes']

@@ -32,8 +32,7 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
     climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        transcription_order=transcription_order)
 
     climb.set_time_options(opt_initial=False, duration_bounds=(50, 400),
                            duration_ref=100.0)
@@ -59,11 +58,11 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
     climb.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
-    # climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
+    climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     # climb.add_boundary_constraint('aero.mach', loc='final', equals=.80, units=None)
-    # climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
+    climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    climb.add_boundary_constraint('time', loc='final', upper=67., units='s')
+    climb.add_boundary_constraint('time', loc='final', upper=65.71, units='s')
 
     climb.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     climb.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
@@ -77,9 +76,8 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
 
     escort = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
-                        num_segments=num_seg*2,
-                        transcription_order=transcription_order,
-                        compressed=False)
+                        num_segments=num_seg,
+                        transcription_order=transcription_order)
 
     escort.set_time_options(duration_bounds=(50, 10000), duration_ref=100.0)
 
@@ -103,8 +101,8 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
 
-    # escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
-    escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
+    # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     # escort.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
     # escort.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
@@ -172,7 +170,7 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
     p.setup(check=True, force_alloc_complex=True)
 
     p['climb.t_initial'] = 0.0
-    p['climb.t_duration'] = 298.46902
+    p['climb.t_duration'] = 300.
     p['climb.states:r'] = climb.interpolate(ys=[0.0, 111319.54], nodes='disc')
     p['climb.states:h'] = climb.interpolate(ys=[100.0, 20000.0], nodes='disc')
     p['climb.states:v'] = climb.interpolate(ys=[135.964, 283.159], nodes='disc')
@@ -193,7 +191,7 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
 
 if __name__ == '__main__':
-    p = escort_problem(optimizer='SNOPT', num_seg=10, transcription_order=3)
+    p = escort_problem(optimizer='SNOPT', num_seg=15, transcription_order=3)
 
     p.run_model()
 

@@ -7,6 +7,7 @@ from dymos import ODEOptions
 from dymos.models.atmosphere import StandardAtmosphereGroup
 from path_dependent_missions.escort.aero import AeroGroup
 from path_dependent_missions.escort.prop.F110_prop import PropGroup
+# from path_dependent_missions.escort.prop import PropGroup
 from dymos.models.eom import FlightPathEOM2D
 
 
@@ -25,6 +26,7 @@ class MinTimeClimbODE(Group):
 
     ode_options.declare_parameter('alpha', targets=['alpha'], units='rad')
     ode_options.declare_parameter('S', targets=['S'], units='m**2')
+    ode_options.declare_parameter('Isp', targets=['Isp'], units='s')
     ode_options.declare_parameter('throttle', targets=['throttle'], units=None)
 
     def initialize(self):
@@ -47,6 +49,7 @@ class MinTimeClimbODE(Group):
         self.add_subsystem(name='prop',
                            subsys=PropGroup(num_nodes=nn),
                            promotes_inputs=['h', 'throttle'])
+                           # promotes_inputs=['h', 'throttle', 'Isp'])
 
         self.connect('aero.mach', 'prop.mach')
 
