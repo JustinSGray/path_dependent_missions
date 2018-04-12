@@ -56,7 +56,6 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    # phase.add_control('Isp', val=1600, units='s', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')

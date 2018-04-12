@@ -9,7 +9,7 @@ from dymos import Phase
 from path_dependent_missions.CRM.min_time_climb_ode import MinTimeClimbODE
 
 optimizer = 'SNOPT'
-num_seg = 7
+num_seg = 14
 transcription_order = 3
 
 p = Problem(model=Group())
@@ -17,16 +17,17 @@ p = Problem(model=Group())
 p.driver = pyOptSparseDriver()
 p.driver.options['optimizer'] = optimizer
 if optimizer == 'SNOPT':
-    p.driver.opt_settings['Major iterations limit'] = 500
+    p.driver.opt_settings['Major iterations limit'] = 200
     p.driver.opt_settings['iSumm'] = 6
     p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-9
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-9
-    p.driver.opt_settings['Verify level'] = -1
+    # p.driver.opt_settings['Verify level'] = 2
 
 phase = Phase('gauss-lobatto',
               ode_class=MinTimeClimbODE,
               num_segments=num_seg,
-              transcription_order=transcription_order)
+              transcription_order=transcription_order,
+              compressed=False)
 
 p.model.add_subsystem('phase', phase)
 
@@ -34,7 +35,7 @@ phase.set_time_options(opt_initial=False, duration_bounds=(50, 1e5),
                        duration_ref=100.0)
 
 phase.set_state_options('r', fix_initial=True, lower=0, upper=1.0E4,
-                        scaler=1.0E-3, defect_scaler=1.0E-2, units='km')
+                        scaler=1.0E-2, defect_scaler=1.0E-2, units='km')
 
 phase.set_state_options('h', fix_initial=True, lower=0, upper=14000.0,
                         scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
@@ -48,23 +49,22 @@ phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
 phase.set_state_options('m', fix_initial=True, lower=1e3, upper=1.0E6,
                         scaler=1.0E-3, defect_scaler=1.0E-3)
 
-phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi/180., scaler=1,
-                  dynamic=True, rate_continuity=True)
+phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi/180., scaler=1, dynamic=True, rate_continuity=True)
 
 phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
 
-phase.add_boundary_constraint('h', loc='final', equals=10e3, scaler=1.0E-3, units='m')
-phase.add_boundary_constraint('r', loc='final', equals=15., units=None)
+phase.add_boundary_constraint('h', loc='final', equals=100., scaler=1.0E-3, units='m')
+phase.add_boundary_constraint('r', loc='final', equals=1500., units='km')
 # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-phase.add_path_constraint(name='aero.mach', lower=0.01, upper=.8)
-phase.add_path_constraint(name='prop.m_dot', upper=0.)
-phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
+phase.add_path_constraint(name='aero.mach', lower=0.01, upper=.9)
+# phase.add_path_constraint(name='prop.m_dot', upper=0.)
+# phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
 # phase.add_path_constraint(name='m', lower=1e4)
 phase.add_path_constraint(name='h', lower=0.)
 
 # phase.set_objective('time', loc='final', ref=10.0)
-phase.set_objective('m', loc='final', ref=-100.0)
+phase.add_objective('m', loc='final', ref=-10000.0)
 # phase.set_objective('r', loc='final', ref=-100000.0)
 
 p.model.jacobian = CSCJacobian()
@@ -77,15 +77,17 @@ p.setup(mode='fwd', check=True)
 # exit()
 
 p['phase.t_initial'] = 0.0
-p['phase.t_duration'] = 50.
+p['phase.t_duration'] = 500.
 
-p['phase.states:r'] = phase.interpolate(ys=[0.0, 15.], nodes='disc')
+p['phase.states:r'] = phase.interpolate(ys=[0.0, 150.], nodes='disc')
 p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
 p['phase.states:m'] = phase.interpolate(ys=[5e4, 4.9e4], nodes='disc')
-p['phase.states:h'] = phase.interpolate(ys=[1e3, 10e3], nodes='disc')
+p['phase.states:h'][:] = 1e4
+p['phase.states:h'][0] = 0
+p['phase.states:h'][-1] = 0
 p['phase.controls:alpha'] = phase.interpolate(ys=[0., 0.5], nodes='all')
 
-p['phase.states:v'][:] = 267.
+p['phase.states:v'][:] = 200.
 
 # # Create CRM geometry
 # for phase_name in ['phase.rhs_disc.aero.OAS_group.', 'phase.rhs_col.aero.OAS_group.']:
@@ -97,12 +99,12 @@ p['phase.states:v'][:] = 267.
 
 p.run_model()
 
-exp_out = p.model.phase.simulate(times='disc')
-p['phase.states:r'] = np.atleast_2d(exp_out.get_values('r'))
-p['phase.states:h'] = np.atleast_2d(exp_out.get_values('h'))
-p['phase.states:v'] = np.atleast_2d(exp_out.get_values('v'))
-p['phase.states:gam'] = np.atleast_2d(exp_out.get_values('gam'))
-p['phase.states:m'] = np.atleast_2d(exp_out.get_values('m'))
+# exp_out = p.model.phase.simulate(times='disc')
+# p['phase.states:r'] = np.atleast_2d(exp_out.get_values('r'))
+# p['phase.states:h'] = np.atleast_2d(exp_out.get_values('h'))
+# p['phase.states:v'] = np.atleast_2d(exp_out.get_values('v'))
+# p['phase.states:gam'] = np.atleast_2d(exp_out.get_values('gam'))
+# p['phase.states:m'] = np.atleast_2d(exp_out.get_values('m'))
 
 p.run_driver()
 
@@ -143,8 +145,8 @@ axarr[5].plot(r, throttle, 'ko')
 axarr[5].set_ylabel('throttle')
 axarr[5].set_xlabel('range')
 
-if 1:
-    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 20))
+if 0:
+    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 100))
     time2 = exp_out.get_values('time')
     m2 = exp_out.get_values('m')
     mach2 = exp_out.get_values('aero.mach')

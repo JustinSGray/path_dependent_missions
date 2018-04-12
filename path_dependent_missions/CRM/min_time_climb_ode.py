@@ -5,8 +5,8 @@ from openmdao.api import Group
 from dymos import ODEOptions
 
 from dymos.models.atmosphere import StandardAtmosphereGroup
-from path_dependent_missions.escort.aero import AeroGroup
-from path_dependent_missions.escort.prop import PropGroup
+from path_dependent_missions.CRM.aero import AeroGroup
+from path_dependent_missions.CRM.prop import PropGroup
 from dymos.models.eom import FlightPathEOM2D
 
 

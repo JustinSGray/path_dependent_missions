@@ -5,9 +5,7 @@ import numpy as np
 from openmdao.api import Group, DenseJacobian, IndepVarComp
 
 from openaerostruct.geometry.inputs_group import InputsGroup
-from openaerostruct.aerodynamics.vlm_preprocess_group import VLMPreprocessGroup
-from openaerostruct.aerodynamics.vlm_states_group import VLMStatesGroup
-from openaerostruct.aerodynamics.vlm_postprocess_group import VLMPostprocessGroup
+from openaerostruct.aerodynamics.vlm_full_group import VLMFullGroup
 
 from openaerostruct.common.lifting_surface import LiftingSurface
 
@@ -42,9 +40,8 @@ class OASGroup(Group):
 
         wing = LiftingSurface('wing')
 
-        wing.initialize_mesh(num_points_x, num_points_z)
-        wing.set_mesh_parameters(distribution='sine', section_origin=.25)
-        wing.set_structural_properties(E=70.e9, G=29.e9, spar_location=0.35, sigma_y=200e6, rho=2700)
+        wing.initialize_mesh(num_points_x, num_points_z, distribution='sine', section_origin=.25)
+        wing.set_structural_properties(E=70.e9, G=29.e9, spar_location=0.35, material_yield=200e6, material_density=2700)
 
         wing.set_chord(1.)
         wing.set_twist(0.)
@@ -65,13 +62,6 @@ class OASGroup(Group):
         inputs_group = InputsGroup(num_nodes=num_nodes, lifting_surfaces=lifting_surfaces)
         self.add_subsystem('inputs_group', inputs_group, promotes=['*'])
 
-        self.add_subsystem('vlm_preprocess_group',
-            VLMPreprocessGroup(num_nodes=num_nodes, lifting_surfaces=lifting_surfaces),
-            promotes=['*'])
-
-        self.add_subsystem('vlm_states_group',
-            VLMStatesGroup(num_nodes=num_nodes, lifting_surfaces=lifting_surfaces), promotes=['*'])
-
-        self.add_subsystem('vlm_postprocess_group',
-            VLMPostprocessGroup(num_nodes=num_nodes, lifting_surfaces=lifting_surfaces),
+        self.add_subsystem('vlm_full_group',
+            VLMFullGroup(num_nodes=num_nodes, lifting_surfaces=lifting_surfaces),
             promotes=['*'])
