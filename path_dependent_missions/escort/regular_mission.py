@@ -11,22 +11,21 @@ from dymos import Phase
 from min_time_climb_ode import MinTimeClimbODE
 
 
-def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
+def min_time_climb_problem(num_seg=3, transcription_order=5,
                            transcription='gauss-lobatto',
-                           top_level_densejacobian=True, meeting_altitude=20000.):
+                           top_level_densejacobian=True):
 
     p = Problem(model=Group())
 
     p.driver = pyOptSparseDriver()
-    p.driver.options['optimizer'] = optimizer
-    if optimizer == 'SNOPT':
-        p.driver.opt_settings['Major iterations limit'] = 500
-        p.driver.opt_settings['iSumm'] = 6
-        p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
-        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
-        p.driver.opt_settings['Verify level'] = -1
-        p.driver.opt_settings['Function precision'] = 1.0E-6
-        p.driver.opt_settings['Linesearch tolerance'] = 0.10
+    p.driver.options['optimizer'] = 'SNOPT'
+    p.driver.opt_settings['Major iterations limit'] = 500
+    p.driver.opt_settings['iSumm'] = 6
+    p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
+    p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
+    p.driver.opt_settings['Verify level'] = 1
+    p.driver.opt_settings['Function precision'] = 1.0E-6
+    p.driver.opt_settings['Linesearch tolerance'] = .9
 
     phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
@@ -38,7 +37,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                            duration_ref=100.0)
 
     phase.set_state_options('r', fix_initial=True, lower=0, upper=1.0E6,
-                            scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
+                            scaler=1.0E-4, defect_scaler=1.0E-3, units='m')
 
     phase.set_state_options('h', fix_initial=True, lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
@@ -59,10 +58,10 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     # phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=True, opt=True, lower=0., upper=1.)
 
-    phase.add_boundary_constraint('h', loc='final', equals=1e3, scaler=1.0E-3, units='m')
+    phase.add_boundary_constraint('h', loc='final', equals=100., scaler=1.0E-3, units='m')
     # phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
-    phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
-    phase.add_boundary_constraint('r', loc='final', equals=2e5, units='m')
+    # phase.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
+    phase.add_boundary_constraint('r', loc='final', equals=1e6, units='m')
 
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     phase.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
@@ -72,27 +71,26 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     # phase.add_objective('time', loc='final', ref=100.0)
     phase.add_objective('m', loc='final', ref=-10000.0)
 
-    if top_level_densejacobian:
-        p.model.jacobian = CSCJacobian()
-        p.model.linear_solver = DirectSolver()
+    p.model.jacobian = CSCJacobian()
+    p.model.linear_solver = DirectSolver()
 
     p.setup(mode='fwd', check=True)
 
     p['phase.t_initial'] = 0.0
-    p['phase.t_duration'] = 400.
-    p['phase.states:r'] = phase.interpolate(ys=[0.0, 2e5], nodes='disc')
-    p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
+    p['phase.t_duration'] = 2000.
+    p['phase.states:r'] = phase.interpolate(ys=[0.0, 1e6], nodes='disc')
+    p['phase.states:h'] = phase.interpolate(ys=[100.0, 1e4], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[19030.468, 16841.431], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[30e3, 29e3], nodes='disc')
     # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     return p
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(optimizer='SNOPT', num_seg=30, transcription_order=3)
-    p.run_model()
+    p = min_time_climb_problem(num_seg=10, transcription_order=3)
+    # p.run_model()
     p.run_driver()
 
 
