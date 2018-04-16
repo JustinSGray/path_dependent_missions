@@ -89,13 +89,13 @@ p['phase.controls:alpha'] = phase.interpolate(ys=[0., 0.5], nodes='all')
 
 p['phase.states:v'][:] = 200.
 
-# # Create CRM geometry
-# for phase_name in ['phase.rhs_disc.aero.OAS_group.', 'phase.rhs_col.aero.OAS_group.']:
-#     p[phase_name + 'wing_chord_dv'] = np.array([ 107.4 , 285.8 , 536.2 , 285.8 , 107.4 ]) * 0.0254
-#     p[phase_name + 'wing_twist_dv'] = np.array([ -3.75 ,  0.76 ,  6.72 ,  0.76 , -3.75 ]) * np.pi / 180.
-#     p[phase_name + 'wing_sec_x_dv'] = np.array([  1780 ,  1226 ,   904 ,  1226 ,  1780 ]) * 0.0254
-#     p[phase_name + 'wing_sec_y_dv'] = np.array([ 263.8 , 181.1 , 174.1 , 181.1 , 263.8 ]) * 0.0254
-#     p[phase_name + 'wing_sec_z_dv'] = np.array([ -1157 ,  -428 ,     0 ,   428 ,  1157 ]) * 0.0254
+# Create CRM geometry
+for phase_name in ['phase.rhs_disc.aero.OAS_group.', 'phase.rhs_col.aero.OAS_group.']:
+    p[phase_name + 'wing_chord_dv'] = np.array([ 107.4 , 285.8 , 536.2 , 285.8 , 107.4 ]) * 0.0254
+    p[phase_name + 'wing_twist_dv'] = np.array([ -3.75 ,  0.76 ,  6.72 ,  0.76 , -3.75 ]) * np.pi / 180.
+    p[phase_name + 'wing_sec_x_dv'] = np.array([  1780 ,  1226 ,   904 ,  1226 ,  1780 ]) * 0.0254
+    p[phase_name + 'wing_sec_y_dv'] = np.array([ 263.8 , 181.1 , 174.1 , 181.1 , 263.8 ]) * 0.0254
+    p[phase_name + 'wing_sec_z_dv'] = np.array([ -1157 ,  -428 ,     0 ,   428 ,  1157 ]) * 0.0254
 
 p.run_model()
 

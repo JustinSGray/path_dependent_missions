@@ -51,6 +51,12 @@ class OASGroup(Group):
         wing.set_thickness(0.05)
         wing.set_radius(0.1)
 
+        wing.bsplines['chord'] = [5, 2]
+        wing.bsplines['twist'] = [5, 2]
+        wing.bsplines['sec_x'] = [5, 2]
+        wing.bsplines['sec_y'] = [5, 2]
+        wing.bsplines['sec_z'] = [5, 2]
+
         lifting_surfaces = [wing]
 
         indep_var_comp = IndepVarComp()

@@ -25,7 +25,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
     p.driver.opt_settings['Verify level'] = 1
     p.driver.opt_settings['Function precision'] = 1.0E-6
-    p.driver.opt_settings['Linesearch tolerance'] = .9
+    p.driver.opt_settings['Linesearch tolerance'] = .01
 
     phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
@@ -66,6 +66,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     phase.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
     phase.add_path_constraint(name='prop.m_dot', upper=0.)
+    # phase.add_path_constraint(name='flight_dynamics.r_dot', lower=0.)
 
     # Minimize time at the end of the phase
     # phase.add_objective('time', loc='final', ref=100.0)
@@ -90,7 +91,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
 if __name__ == '__main__':
     p = min_time_climb_problem(num_seg=10, transcription_order=3)
-    # p.run_model()
+    p.run_model()
     p.run_driver()
 
 
@@ -138,7 +139,7 @@ if __name__ == '__main__':
 
     axarr[-1].set_xlabel('range, km')
 
-    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 50))
+    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 20))
     time2 = exp_out.get_values('time')
     m2 = exp_out.get_values('m')
     mach2 = exp_out.get_values('aero.mach')
