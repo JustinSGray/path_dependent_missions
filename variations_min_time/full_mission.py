@@ -89,13 +89,13 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p.setup(mode='fwd', check=True)
 
     p['phase0.t_initial'] = 0.0
-    p['phase0.t_duration'] = 500.
+    p['phase0.t_duration'] = 1000.
     p['phase0.states:r'] = phase.interpolate(ys=[0.0, 5e5], nodes='disc')
     p['phase0.states:h'] = phase.interpolate(ys=[100.0, 100.0], nodes='disc')
-    p['phase0.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
+    p['phase0.states:v'] = phase.interpolate(ys=[200., 200.], nodes='disc')
     p['phase0.states:gam'] = phase.interpolate(ys=[0.5, 0.4], nodes='disc')
-    p['phase0.states:m'] = phase.interpolate(ys=[20e3, 19e3], nodes='disc')
-    p['phase0.controls:alpha'] = phase.interpolate(ys=[0.5, 0.5], nodes='all')
+    p['phase0.states:m'] = phase.interpolate(ys=[20e3, 18e3], nodes='disc')
+    p['phase0.controls:alpha'] = phase.interpolate(ys=[1.5, 0.5], nodes='all')
 
     p.run_model()
 
@@ -149,7 +149,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
         axarr[-1].set_xlabel('range, km')
 
-        exp_out = phase.simulate(times=np.linspace(0, p['phase0.t_duration'], 50))
+        exp_out = phase.simulate(times=np.linspace(0, p['phase0.t_duration'], 40))
         time2 = exp_out.get_values('time')
         m2 = exp_out.get_values('m')
         mach2 = exp_out.get_values('aero.mach')
