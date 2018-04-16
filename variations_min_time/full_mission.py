@@ -52,7 +52,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
-                            defect_scaler=1e-1, scaler=1e1, units='rad')
+                            defect_scaler=1e1, scaler=1e1, units='rad')
 
     phase.set_state_options('m', fix_initial=True, lower=10.0, upper=1.0E5,
                             scaler=1.0E-3, defect_scaler=1.0E-3)
@@ -202,4 +202,4 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 if __name__ == '__main__':
     p = min_time_climb(transcription='gauss-lobatto', optimizer='SNOPT',
-                       num_seg=7, transcription_order=3, top_level_jacobian='csc')
+                       num_seg=20, transcription_order=3, top_level_jacobian='csc')

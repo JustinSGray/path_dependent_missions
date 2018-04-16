@@ -6,7 +6,7 @@ from openmdao.api import ExplicitComponent
 from path_dependent_missions.F110.smt_model import get_F110_interp
 
 
-scaler = 1.
+scaler = 1.5
 
 class SMTThrustComp(ExplicitComponent):
 
