@@ -26,7 +26,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Major iterations limit'] = 1000
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
-        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
+        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-6
         p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
@@ -43,7 +43,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
                            duration_ref=100.0)
 
     phase.set_state_options('r', fix_initial=True, lower=0, upper=1.0E6,
-                            scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
+                            scaler=1.0E-3, defect_scaler=1.0E-4, units='m')
 
     phase.set_state_options('h', fix_initial=True, lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
@@ -52,18 +52,18 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
-                            ref=1.0, defect_scaler=1.0, units='rad')
+                            defect_scaler=1e-1, scaler=1e1, units='rad')
 
     phase.set_state_options('m', fix_initial=True, lower=10.0, upper=1.0E5,
                             scaler=1.0E-3, defect_scaler=1.0E-3)
 
-    phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
+    phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1e0,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     phase.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
     # phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
-    phase.add_control('throttle', val=1., dynamic=True, opt=True, lower=0., upper=1.)
+    phase.add_control('throttle', val=1., dynamic=True, opt=True, lower=0., upper=1., rate_continuity=True, scaler=1e0)
 
     phase.add_boundary_constraint('h', loc='final', equals=100, scaler=1.0E-3, units='m')
     # phase.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
@@ -92,6 +92,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['phase0.t_duration'] = 1000.
     p['phase0.states:r'] = phase.interpolate(ys=[0.0, 5e5], nodes='disc')
     p['phase0.states:h'] = phase.interpolate(ys=[100.0, 100.0], nodes='disc')
+    # p['phase0.states:h'][1:-1] = 1e4
     p['phase0.states:v'] = phase.interpolate(ys=[200., 200.], nodes='disc')
     p['phase0.states:gam'] = phase.interpolate(ys=[0.5, 0.4], nodes='disc')
     p['phase0.states:m'] = phase.interpolate(ys=[20e3, 18e3], nodes='disc')
@@ -114,7 +115,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
         phase = p.model.phase0
 
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-        f, axarr = plt.subplots(6, sharex=True)
+        f, axarr = plt.subplots(7, sharex=True)
 
         time = phase.get_values('time', nodes='all')
         m = phase.get_values('m', nodes='all')
@@ -127,29 +128,32 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
         pad = 90
 
-        axarr[0].plot(r, h, 'o', color=colors[0])
+        axarr[0].plot(time, h, 'o', color=colors[0])
         axarr[0].set_ylabel('altitude, m', rotation='horizontal', horizontalalignment='left', labelpad=pad)
         # axarr[0].set_yticks([0., 15000.])
 
-        axarr[1].plot(r, mach, 'o', color=colors[0])
+        axarr[1].plot(time, mach, 'o', color=colors[0])
         axarr[1].set_ylabel('mach', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-        axarr[2].plot(r, m, 'o', color=colors[0])
+        axarr[2].plot(time, m, 'o', color=colors[0])
         axarr[2].set_ylabel('mass, kg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
         # axarr[2].set_yticks([17695.2, 19000.])
 
-        axarr[3].plot(r, alpha, 'o', color=colors[0])
+        axarr[3].plot(time, alpha, 'o', color=colors[0])
         axarr[3].set_ylabel('alpha, deg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-        axarr[4].plot(r, gam, 'o', color=colors[0])
+        axarr[4].plot(time, gam, 'o', color=colors[0])
         axarr[4].set_ylabel('gamma', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-        axarr[5].plot(r, throttle, 'o', color=colors[0])
+        axarr[5].plot(time, throttle, 'o', color=colors[0])
         axarr[5].set_ylabel('throttle', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-        axarr[-1].set_xlabel('range, km')
+        axarr[6].plot(time, r, 'o', color=colors[0])
+        axarr[6].set_ylabel('range', rotation='horizontal', horizontalalignment='left', labelpad=pad)
 
-        exp_out = phase.simulate(times=np.linspace(0, p['phase0.t_duration'], 40))
+        axarr[-1].set_xlabel('time, s')
+
+        exp_out = phase.simulate(times=np.linspace(0, p['phase0.t_duration'], 100))
         time2 = exp_out.get_values('time')
         m2 = exp_out.get_values('m')
         mach2 = exp_out.get_values('aero.mach')
@@ -158,12 +162,13 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
         alpha2 = exp_out.get_values('alpha')
         gam2 = exp_out.get_values('gam')
         throttle2 = exp_out.get_values('throttle')
-        axarr[0].plot(r2, h2, color=colors[0])
-        axarr[1].plot(r2, mach2, color=colors[0])
-        axarr[2].plot(r2, m2, color=colors[0])
-        axarr[3].plot(r2, alpha2, color=colors[0])
-        axarr[4].plot(r2, gam2, color=colors[0])
-        axarr[5].plot(r2, throttle2, color=colors[0])
+        axarr[0].plot(time2, h2, color=colors[0])
+        axarr[1].plot(time2, mach2, color=colors[0])
+        axarr[2].plot(time2, m2, color=colors[0])
+        axarr[3].plot(time2, alpha2, color=colors[0])
+        axarr[4].plot(time2, gam2, color=colors[0])
+        axarr[5].plot(time2, throttle2, color=colors[0])
+        axarr[6].plot(time2, r2, color=colors[0])
 
         n_points = time.shape[0]
         col_data = np.zeros((n_points, 8))
@@ -197,4 +202,4 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 if __name__ == '__main__':
     p = min_time_climb(transcription='gauss-lobatto', optimizer='SNOPT',
-                       num_seg=10, transcription_order=3, top_level_jacobian='csc')
+                       num_seg=7, transcription_order=3, top_level_jacobian='csc')
