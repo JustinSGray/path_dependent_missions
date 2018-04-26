@@ -45,9 +45,9 @@ class OASGroup(Group):
 
         wing.set_chord(1.)
         wing.set_twist(0.)
-        wing.set_sweep(0.)
-        wing.set_dihedral(0.)
-        wing.set_span(15.)
+        wing.set_displacement_x(np.zeros(5))
+        wing.set_displacement_y(np.zeros(5))
+        wing.set_displacement_z(np.zeros(5))
         wing.set_thickness(0.05)
         wing.set_radius(0.1)
 

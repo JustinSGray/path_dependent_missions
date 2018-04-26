@@ -28,7 +28,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
 
-    phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
+    phase = Phase(transcription, ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
                         transcription_order=transcription_order)
 
@@ -56,7 +56,8 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    # phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True, rate_continuity=True)
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
@@ -64,6 +65,7 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     phase.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
+    phase.add_path_constraint(name='prop.m_dot', lower=-10.)
 
     # Minimize time at the end of the phase
     phase.add_objective('time', loc='final', ref=100.0)
@@ -81,14 +83,14 @@ def min_time_climb_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[19030.468, 16841.431], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[30e3, 29e3], nodes='disc')
     # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     return p
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(optimizer='SNOPT', num_seg=15, transcription_order=3)
+    p = min_time_climb_problem(transcription='radau-ps', optimizer='SNOPT', num_seg=10, transcription_order=3)
     p.run_model()
     p.run_driver()
 
@@ -153,29 +155,29 @@ if __name__ == '__main__':
     # axarr[4].plot(r2, gam2, color=colors[i])
     # axarr[5].plot(r2, throttle2, color=colors[i])
 
-    n_points = time.shape[0]
-    col_data = np.zeros((n_points, 8))
-    col_data[:, 0] = time[:, 0]
-    col_data[:, 1] = m[:, 0]
-    col_data[:, 2] = mach[:, 0]
-    col_data[:, 3] = h[:, 0]
-    col_data[:, 4] = r[:, 0]
-    col_data[:, 5] = alpha[:, 0]
-    col_data[:, 6] = gam[:, 0]
-    col_data[:, 7] = throttle[:, 0]
-    np.savetxt('col_data_4.dat', col_data)
-
-    n_points = time2.shape[0]
-    sim_data = np.zeros((n_points, 8))
-    sim_data[:, 0] = time2[:, 0]
-    sim_data[:, 1] = m2[:, 0]
-    sim_data[:, 2] = mach2[:, 0]
-    sim_data[:, 3] = h2[:, 0]
-    sim_data[:, 4] = r2[:, 0]
-    sim_data[:, 5] = alpha2[:, 0]
-    sim_data[:, 6] = gam2[:, 0]
-    sim_data[:, 7] = throttle2[:, 0]
-    np.savetxt('sim_data_4.dat', sim_data)
+    # n_points = time.shape[0]
+    # col_data = np.zeros((n_points, 8))
+    # col_data[:, 0] = time[:, 0]
+    # col_data[:, 1] = m[:, 0]
+    # col_data[:, 2] = mach[:, 0]
+    # col_data[:, 3] = h[:, 0]
+    # col_data[:, 4] = r[:, 0]
+    # col_data[:, 5] = alpha[:, 0]
+    # col_data[:, 6] = gam[:, 0]
+    # col_data[:, 7] = throttle[:, 0]
+    # np.savetxt('col_data_4.dat', col_data)
+    #
+    # n_points = time2.shape[0]
+    # sim_data = np.zeros((n_points, 8))
+    # sim_data[:, 0] = time2[:, 0]
+    # sim_data[:, 1] = m2[:, 0]
+    # sim_data[:, 2] = mach2[:, 0]
+    # sim_data[:, 3] = h2[:, 0]
+    # sim_data[:, 4] = r2[:, 0]
+    # sim_data[:, 5] = alpha2[:, 0]
+    # sim_data[:, 6] = gam2[:, 0]
+    # sim_data[:, 7] = throttle2[:, 0]
+    # np.savetxt('sim_data_4.dat', sim_data)
 
     # plt.tight_layout()
     # plt.savefig('min_time.pdf', bbox_inches='tight')

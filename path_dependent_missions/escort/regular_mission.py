@@ -28,7 +28,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     p.driver.opt_settings['Function precision'] = 1.0E-6
     p.driver.opt_settings['Linesearch tolerance'] = .1
 
-    phase = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
+    phase = Phase(transcription, ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
                         transcription_order=transcription_order)
 
@@ -91,7 +91,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(num_seg=10, transcription_order=3)
+    p = min_time_climb_problem(transcription='radau-ps', num_seg=10, transcription_order=3)
     p.run_model()
     p.run_driver()
 
@@ -143,46 +143,46 @@ if __name__ == '__main__':
 
     axarr[-1].set_xlabel('time, s')
 
-    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 100))
-    time2 = exp_out.get_values('time')
-    m2 = exp_out.get_values('m')
-    mach2 = exp_out.get_values('aero.mach')
-    h2 = exp_out.get_values('h')
-    r2 = exp_out.get_values('r') / 1e3
-    alpha2 = exp_out.get_values('alpha')
-    gam2 = exp_out.get_values('gam')
-    throttle2 = exp_out.get_values('throttle')
-    axarr[0].plot(time2, h2, color=colors[0])
-    axarr[1].plot(time2, mach2, color=colors[0])
-    axarr[2].plot(time2, m2, color=colors[0])
-    axarr[3].plot(time2, alpha2, color=colors[0])
-    axarr[4].plot(time2, gam2, color=colors[0])
-    axarr[5].plot(time2, throttle2, color=colors[0])
-    axarr[6].plot(time2, r2, color=colors[0])
-
-    n_points = time.shape[0]
-    col_data = np.zeros((n_points, 8))
-    col_data[:, 0] = time[:, 0]
-    col_data[:, 1] = m[:, 0]
-    col_data[:, 2] = mach[:, 0]
-    col_data[:, 3] = h[:, 0]
-    col_data[:, 4] = r[:, 0]
-    col_data[:, 5] = alpha[:, 0]
-    col_data[:, 6] = gam[:, 0]
-    col_data[:, 7] = throttle[:, 0]
-    np.savetxt('col_data_4.dat', col_data)
-
-    n_points = time2.shape[0]
-    sim_data = np.zeros((n_points, 8))
-    sim_data[:, 0] = time2[:, 0]
-    sim_data[:, 1] = m2[:, 0]
-    sim_data[:, 2] = mach2[:, 0]
-    sim_data[:, 3] = h2[:, 0]
-    sim_data[:, 4] = r2[:, 0]
-    sim_data[:, 5] = alpha2[:, 0]
-    sim_data[:, 6] = gam2[:, 0]
-    sim_data[:, 7] = throttle2[:, 0]
-    np.savetxt('sim_data_4.dat', sim_data)
+    # exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 100))
+    # time2 = exp_out.get_values('time')
+    # m2 = exp_out.get_values('m')
+    # mach2 = exp_out.get_values('aero.mach')
+    # h2 = exp_out.get_values('h')
+    # r2 = exp_out.get_values('r') / 1e3
+    # alpha2 = exp_out.get_values('alpha')
+    # gam2 = exp_out.get_values('gam')
+    # throttle2 = exp_out.get_values('throttle')
+    # axarr[0].plot(time2, h2, color=colors[0])
+    # axarr[1].plot(time2, mach2, color=colors[0])
+    # axarr[2].plot(time2, m2, color=colors[0])
+    # axarr[3].plot(time2, alpha2, color=colors[0])
+    # axarr[4].plot(time2, gam2, color=colors[0])
+    # axarr[5].plot(time2, throttle2, color=colors[0])
+    # axarr[6].plot(time2, r2, color=colors[0])
+    #
+    # n_points = time.shape[0]
+    # col_data = np.zeros((n_points, 8))
+    # col_data[:, 0] = time[:, 0]
+    # col_data[:, 1] = m[:, 0]
+    # col_data[:, 2] = mach[:, 0]
+    # col_data[:, 3] = h[:, 0]
+    # col_data[:, 4] = r[:, 0]
+    # col_data[:, 5] = alpha[:, 0]
+    # col_data[:, 6] = gam[:, 0]
+    # col_data[:, 7] = throttle[:, 0]
+    # np.savetxt('col_data_4.dat', col_data)
+    #
+    # n_points = time2.shape[0]
+    # sim_data = np.zeros((n_points, 8))
+    # sim_data[:, 0] = time2[:, 0]
+    # sim_data[:, 1] = m2[:, 0]
+    # sim_data[:, 2] = mach2[:, 0]
+    # sim_data[:, 3] = h2[:, 0]
+    # sim_data[:, 4] = r2[:, 0]
+    # sim_data[:, 5] = alpha2[:, 0]
+    # sim_data[:, 6] = gam2[:, 0]
+    # sim_data[:, 7] = throttle2[:, 0]
+    # np.savetxt('sim_data_4.dat', sim_data)
 
     plt.tight_layout()
     # plt.savefig('min_time.pdf', bbox_inches='tight')

@@ -25,8 +25,8 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
     if optimizer == 'SNOPT':
         p.driver.opt_settings['Major iterations limit'] = 1000
         p.driver.opt_settings['iSumm'] = 6
-        p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
-        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-6
+        p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-10
+        p.driver.opt_settings['Major optimality tolerance'] = 1.0E-10
         p.driver.opt_settings['Verify level'] = -1
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
@@ -75,7 +75,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
     phase.add_path_constraint(name='alpha', lower=-8, upper=8)
 
     # phase.add_objective('time', loc='final', ref=100.0)
-    phase.add_objective('m', loc='final', ref=-1000.0)
+    phase.add_objective('m', loc='final', ref0=-18e3, ref=-19e3)
 
     if top_level_jacobian.lower() == 'csc':
         p.model.jacobian = CSCJacobian()
@@ -92,7 +92,7 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
     p['phase0.t_duration'] = 1000.
     p['phase0.states:r'] = phase.interpolate(ys=[0.0, 5e5], nodes='disc')
     p['phase0.states:h'] = phase.interpolate(ys=[100.0, 100.0], nodes='disc')
-    # p['phase0.states:h'][1:-1] = 1e4
+    p['phase0.states:h'][1:-1] = 1e4
     p['phase0.states:v'] = phase.interpolate(ys=[200., 200.], nodes='disc')
     p['phase0.states:gam'] = phase.interpolate(ys=[0.5, 0.4], nodes='disc')
     p['phase0.states:m'] = phase.interpolate(ys=[20e3, 18e3], nodes='disc')
@@ -202,4 +202,4 @@ def min_time_climb(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 if __name__ == '__main__':
     p = min_time_climb(transcription='gauss-lobatto', optimizer='SNOPT',
-                       num_seg=20, transcription_order=3, top_level_jacobian='csc')
+                       num_seg=10, transcription_order=3, top_level_jacobian='csc')

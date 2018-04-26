@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 
-from openmdao.api import ExplicitComponent
+from openmdao.api import ExplicitComponent, AnalysisError
 
 from path_dependent_missions.F110.smt_model import get_F110_interp
 
@@ -39,7 +39,15 @@ class SMTThrustComp(ExplicitComponent):
         self.x[:, 1] = inputs['h'] / 1e4
         self.x[:, 2] = inputs['throttle']
 
-        smt_out = self.prop_model.predict_values(self.x)
+        try:
+            smt_out = self.prop_model.predict_values(self.x)
+        except:
+            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+            print(inputs['mach'])
+            print(inputs['h'])
+            print(inputs['throttle'])
+
+            raise AnalysisError()
 
         outputs['thrust'] = smt_out[:, 0] * 2 * 1e4 / scaler
         outputs['m_dot'] = -smt_out[:, 1] * 2

@@ -14,23 +14,25 @@ from path_dependent_missions.escort.read_db import read_db
 
 
 def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
-                           transcription='gauss-lobatto', meeting_altitude=15000.):
+                           transcription='gauss-lobatto', meeting_altitude=11000.):
 
     p = Problem(model=Group())
 
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = optimizer
     if optimizer == 'SNOPT':
-        p.driver.opt_settings['Major iterations limit'] = 100
+        p.driver.opt_settings['Major iterations limit'] = 200
         p.driver.opt_settings['Iterations limit'] = 100000000
         p.driver.opt_settings['iSumm'] = 6
         p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-6
         p.driver.opt_settings['Major optimality tolerance'] = 1.0E-5
         p.driver.opt_settings['Verify level'] = -1
-        p.driver.opt_settings['Function precision'] = 1.0E-6
-        p.driver.opt_settings['Linesearch tolerance'] = .9
+        p.driver.opt_settings['Function precision'] = 1.0E-9
+        p.driver.opt_settings['Linesearch tolerance'] = .1
+        p.driver.opt_settings['Major step limit'] = .5
 
-    climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
+
+    climb = Phase(transcription, ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
                         transcription_order=transcription_order)
 
@@ -38,7 +40,7 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
                            duration_ref=100.0)
 
     climb.set_state_options('r', fix_initial=True, lower=0, upper=1.0E6,
-                            scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
+                            scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
 
     climb.set_state_options('h', fix_initial=True, lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
@@ -59,13 +61,13 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
     climb.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     climb.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
-    # climb.add_boundary_constraint('aero.mach', loc='final', equals=.80, units=None)
-    climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
+    climb.add_boundary_constraint('aero.mach', loc='final', equals=.70, units=None)
+    # climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    climb.add_boundary_constraint('time', loc='final', upper=65.71, units='s')
+    climb.add_boundary_constraint('time', loc='final', upper=100., units='s')
 
     climb.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
-    climb.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
+    # climb.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
 
     # Minimize time at the end of the climb
     # climb.add_objective('time', loc='final', ref=100.0)
@@ -75,14 +77,14 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
 
 
-    escort = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
+    escort = Phase(transcription, ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
                         transcription_order=transcription_order)
 
-    escort.set_time_options(duration_bounds=(50, 10000), duration_ref=100.0)
+    escort.set_time_options(duration_bounds=(50, None), duration_ref=100.0)
 
-    escort.set_state_options('r', lower=0, upper=1.0E6,
-                            scaler=1.0E-3, defect_scaler=1.0E-2, units='m')
+    escort.set_state_options('r', lower=0, upper=1.0E9,
+                            scaler=1.0E-3, defect_scaler=1.0E-4, units='m')
 
     escort.set_state_options('h', lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
@@ -101,7 +103,7 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
 
-    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
+    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True, rate_continuity=True)
     # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     # escort.add_boundary_constraint('h', loc='final', equals=20000, scaler=1.0E-3, units='m')
@@ -110,11 +112,11 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
     # escort.add_boundary_constraint('m', loc='final', lower=14000.0, units='kg')
 
     # escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
-    # escort.add_path_constraint(name='aero.mach', equals=1.0)
+    # escort.add_path_constraint(name='aero.mach', equals=.7)
 
     # Maximize distance at the end of the escort
     # escort.add_objective('r', loc='final', ref=-1e5)
-    escort.add_objective('time', loc='final', ref=-1e5)
+    escort.add_objective('time', loc='final', ref=-1e2)
 
 
     p.model.add_subsystem('escort', escort)
@@ -123,15 +125,16 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
 
 
     # Connect the phases
+    linear_con = True
     linkage_comp = PhaseLinkageComp()
-    linkage_comp.add_linkage(name='L01', vars=['t'], units='s', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['r'], units='m', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['h'], units='m', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['v'], units='m/s', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['gam'], units='rad', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['m'], units='kg', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['alpha'], units='rad', equals=0.0, linear=True)
-    linkage_comp.add_linkage(name='L01', vars=['throttle'], equals=0.0, linear=True)
+    linkage_comp.add_linkage(name='L01', vars=['t'], units='s', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['r'], units='m', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['h'], units='m', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['v'], units='m/s', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['gam'], units='rad', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['m'], units='kg', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['alpha'], units='rad', equals=0.0, linear=linear_con)
+    linkage_comp.add_linkage(name='L01', vars=['throttle'], equals=1.0, linear=linear_con)
 
     p.model.connect('climb.time++', 'linkages.L01_t:lhs')
     p.model.connect('escort.time--', 'linkages.L01_t:rhs')
@@ -175,8 +178,8 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
     p['climb.states:h'] = climb.interpolate(ys=[100.0, 20000.0], nodes='disc')
     p['climb.states:v'] = climb.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['climb.states:gam'] = climb.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['climb.states:m'] = climb.interpolate(ys=[19030.468, 16841.431], nodes='disc')
-    p['climb.controls:alpha'] = climb.interpolate(ys=[1.0, 1.], nodes='all')
+    p['climb.states:m'] = climb.interpolate(ys=[30e3, 29e3], nodes='disc')
+    p['climb.controls:alpha'] = climb.interpolate(ys=[.5, .5], nodes='all')
 
     p['escort.t_initial'] = 300.
     p['escort.t_duration'] = 1000.
@@ -184,14 +187,14 @@ def escort_problem(optimizer='SNOPT', num_seg=3, transcription_order=5,
     p['escort.states:h'] = escort.interpolate(ys=[meeting_altitude, meeting_altitude], nodes='disc')
     p['escort.states:v'] = escort.interpolate(ys=[250., 250.], nodes='disc')
     p['escort.states:gam'] = escort.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['escort.states:m'] = escort.interpolate(ys=[16841.431, 15000.], nodes='disc')
+    p['escort.states:m'] = escort.interpolate(ys=[29e3, 25e3], nodes='disc')
     p['escort.controls:alpha'] = escort.interpolate(ys=[0.2, 0.2], nodes='all')
 
     return p
 
 
 if __name__ == '__main__':
-    p = escort_problem(optimizer='SNOPT', num_seg=15, transcription_order=3)
+    p = escort_problem(transcription='radau-ps', optimizer='SNOPT', num_seg=10, transcription_order=3)
 
     p.run_model()
 
@@ -255,7 +258,7 @@ if __name__ == '__main__':
 
         axarr[-1].set_xlabel('range, km')
 
-        exp_out = phase.simulate(times=np.linspace(0, p['climb.t_duration'], 50))
+        exp_out = phase.simulate(times=np.linspace(0, p['climb.t_duration'], 100))
         time2 = exp_out.get_values('time')
         m2 = exp_out.get_values('m')
         mach2 = exp_out.get_values('aero.mach')
