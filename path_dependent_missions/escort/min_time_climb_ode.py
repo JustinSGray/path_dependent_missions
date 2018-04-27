@@ -4,10 +4,10 @@ from openmdao.api import Group
 
 from dymos import ODEOptions
 
-# from dymos.models.atmosphere import StandardAtmosphereGroup
+from dymos.models.atmosphere import StandardAtmosphereGroup
 from path_dependent_missions.escort.aero import AeroGroup
 from path_dependent_missions.escort.prop.F110_prop import PropGroup
-from path_dependent_missions.escort.atmos.atmos_comp import AtmosComp as StandardAtmosphereGroup
+# from path_dependent_missions.escort.atmos.atmos_comp import AtmosComp as StandardAtmosphereGroup
 # from path_dependent_missions.escort.prop import PropGroup
 from dymos.models.eom import FlightPathEOM2D
 
