@@ -53,14 +53,15 @@ class TankAloneComp(ExplicitComponent):
 
         # The change in fuel mass is the difference between the amount pumped out
         # and the amount coming back in from recirculation
-        outputs['m_dot'] = -m_flow
+        outputs['m_dot'] = -m_burn
 
         # Both the heat energy being added to the fuel tank and the energy
         # coming from the recirculated fuel affect the temperature of the tank
-        outputs['T_dot'] = (Q_env + (1 - m_burn / m_flow) * Q_sink - Q_out) / (m * self.Cv)
-
+        sink_term = (1 - m_burn / m_flow)
         # Need to change NANs to 0s because m_flow might be 0
-        outputs['T_dot'] = np.nan_to_num(outputs['T_dot'])
+        sink_term = np.nan_to_num(sink_term)
+
+        outputs['T_dot'] = (Q_env + sink_term * Q_sink - m_flow * Q_out) / (m * self.Cv)
 
         outputs['m_constraint'] = m_burn - m_flow
 
