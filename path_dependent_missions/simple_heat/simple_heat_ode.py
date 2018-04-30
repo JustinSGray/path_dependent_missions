@@ -6,10 +6,10 @@ from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, De
 
 from dymos import ODEOptions
 
-from path_dependent_missions.simple_heat.tank_comp import TankComp
-from path_dependent_missions.simple_heat.heat_exchanger_comp import HeatExchangerComp
-from path_dependent_missions.simple_heat.fuel_burner_comp import FuelBurnerComp
-from path_dependent_missions.simple_heat.power_comp import PowerComp
+from path_dependent_missions.simple_heat.components.tank_comp import TankComp
+from path_dependent_missions.simple_heat.components.heat_exchanger_comp import HeatExchangerComp
+from path_dependent_missions.simple_heat.components.fuel_burner_comp import FuelBurnerComp
+from path_dependent_missions.simple_heat.components.power_comp import PowerComp
 
 
 class SimpleHeatODE(Group):

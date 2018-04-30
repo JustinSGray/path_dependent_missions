@@ -62,7 +62,7 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     phase.set_objective('energy', loc='final')
 
     # Allow the optimizer to vary the fuel flow
-    phase.add_control('m_flow', opt=True, lower=0., upper=5., dynamic=True)
+    phase.add_control('m_flow', opt=True, lower=0., upper=5., dynamic=True, rate_continuity=True)
 
     # Optimize the burned fuel amount, if selected
     if opt_burn:
@@ -75,6 +75,7 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     # more fuel than we pumped.
     phase.add_path_constraint('T', upper=1.)
     phase.add_path_constraint('m_flow_rate', upper=0.)
+    phase.add_path_constraint('m_flow', upper=1.)
     phase.add_path_constraint('fuel_burner.m_recirculated', lower=0.)
 
     # Add the phase to the problem and set it up
@@ -89,7 +90,7 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     p['phase.controls:m_flow'] = .5
     p['phase.controls:m_burn'] = .1
     p['phase.t_initial'] = 0.
-    p['phase.t_duration'] = 1.
+    p['phase.t_duration'] = 2.
 
     return p
 
