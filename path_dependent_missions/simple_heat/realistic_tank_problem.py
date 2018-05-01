@@ -29,8 +29,8 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = 'SNOPT'
     p.driver.opt_settings['Major iterations limit'] = 2000
-    p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-7
-    p.driver.opt_settings['Major optimality tolerance'] = 1.0E-7
+    p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-10
+    p.driver.opt_settings['Major optimality tolerance'] = 1.0E-10
     p.driver.opt_settings['Verify level'] = -1
 
     # Set up the phase for the defined ODE function, can be LGR or LGL
@@ -46,18 +46,18 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     phase.set_state_options('energy', fix_initial=True)
 
     # Minimize the energy used to pump the fuel
-    phase.add_objective('energy', loc='final')
+    phase.add_objective('energy', loc='final', ref=10e2)
     # phase.add_objective('m', loc='initial')
     # phase.add_objective('time', loc='final')
 
     # Allow the optimizer to vary the fuel flow
     if opt_m_flow:
-        phase.add_control('m_flow', val=m_flow, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('m_flow', val=m_flow, lower=0.01, dynamic=True, opt=True, rate_continuity=True)
     else:
         phase.add_control('m_flow', val=m_flow, dynamic=True, opt=False)
 
     if opt_m_burn:
-        phase.add_control('m_burn', val=m_burn, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('m_burn', val=m_burn, lower=0.01, dynamic=True, opt=True, rate_continuity=True)
     else:
         phase.add_control('m_burn', val=m_burn, dynamic=True, opt=False)
 
@@ -69,10 +69,13 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     # sure that the amount recirculated is at least 0, otherwise we'd burn
     # more fuel than we pumped.
     if opt_m_flow:
-        phase.add_path_constraint('T', upper=356.)
-        phase.add_path_constraint('m_flow_rate', upper=0.)
-        phase.add_path_constraint('m_recirculated', lower=0.)
-        # phase.add_path_constraint('m_flow', upper=3.)
+        phase.add_path_constraint('T', lower=0.)
+        phase.add_path_constraint('T', upper=333.)
+        phase.add_path_constraint('T_o', lower=0., units='K')
+        phase.add_path_constraint('T_o', upper=333.)
+        # phase.add_path_constraint('m_flow_rate', upper=0.)
+        phase.add_path_constraint('m_recirculated', lower=0., units='kg/s')
+        phase.add_path_constraint('m_flow', lower=0., upper=50.)
 
     # Add the phase to the problem and set it up
     p.model.add_subsystem('phase', phase)
@@ -80,13 +83,13 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     p.setup(check=True, force_alloc_complex=True, mode='fwd')
 
     # Give initial values for the phase states, controls, and time
-    p['phase.states:m'] = 8000
+    p['phase.states:m'] = 6000
     p['phase.states:T'] = 300.
     p['phase.states:energy'] = 0.
-    p['phase.controls:m_burn'][:10] = np.atleast_2d(np.linspace(2., .5, num_seg*order)[:10]).T**2
-    p['phase.controls:m_burn'][10:] = 2.2
+    # p['phase.controls:m_burn'][:10] = np.atleast_2d(np.linspace(2., .5, num_seg*order)[:10]).T**2
+    # p['phase.controls:m_burn'][10:] = 2.2
     p['phase.t_initial'] = 0.
-    p['phase.t_duration'] = 120.
+    p['phase.t_duration'] = 9000
 
     p.set_solver_print(level=-1)
 
@@ -94,7 +97,8 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
 
 if __name__ == '__main__':
 
-    p = setup_energy_opt(10, 3, Q_env=100e3, Q_sink=0., Q_out=40e3, m_burn=1.2, opt_m_flow=True)
+    p = setup_energy_opt(10, 3, Q_env=0, Q_sink=60.e3, Q_out=20.e3, m_burn=.5, m_flow=1.5, opt_m_flow=True)
+    # p.run_model()
     p.run_driver()
     # p.check_partials(compact_print=True)
     plot_results(p)

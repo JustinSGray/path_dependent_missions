@@ -26,9 +26,10 @@ class TankAloneComp(ExplicitComponent):
 
         self.add_output('m_dot', shape=self.nn, units='kg/s')
         self.add_output('T_dot', shape=self.nn, units='K/s')
+        self.add_output('T_o', shape=self.nn, units='K')
         self.add_output('m_recirculated', shape=self.nn, units='kg/s')
 
-        self.Cv = 1.
+        self.Cv = 2010
 
         self.ar = ar = np.arange(self.nn)
 
@@ -43,6 +44,10 @@ class TankAloneComp(ExplicitComponent):
 
         self.declare_partials('m_recirculated', 'm_burn', rows=ar, cols=ar, val=-1.)
         self.declare_partials('m_recirculated', 'm_flow', rows=ar, cols=ar, val=1.)
+
+        self.declare_partials('T_o', 'T', rows=ar, cols=ar, val=1.)
+        self.declare_partials('T_o', 'Q_sink', rows=ar, cols=ar)
+        self.declare_partials('T_o', 'm_flow', rows=ar, cols=ar)
 
         # self.declare_partials('*', '*', method='cs')
 
@@ -68,6 +73,8 @@ class TankAloneComp(ExplicitComponent):
 
         outputs['m_recirculated'] = m_flow - m_burn
 
+        outputs['T_o'] = inputs['T'] + Q_sink / (m_flow * self.Cv)
+
     def compute_partials(self, inputs, partials):
         Q_env = inputs['Q_env']
         Q_sink = inputs['Q_sink']
@@ -89,3 +96,6 @@ class TankAloneComp(ExplicitComponent):
         partials['T_dot', 'm'] = - (Q_env + sink_term * Q_sink - (m_flow - m_burn) * Q_out) / (m**2 * self.Cv)
         partials['T_dot', 'm_burn'] = (- Q_sink / m_flow + Q_out) / (m * self.Cv)
         partials['T_dot', 'm_flow'] = (m_burn / m_flow**2 * Q_sink - Q_out) / (m * self.Cv)
+
+        partials['T_o', 'Q_sink'] = 1. / (m_flow * self.Cv)
+        partials['T_o', 'm_flow'] = - Q_sink / (m_flow**2 * self.Cv)

@@ -2,7 +2,7 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 
-from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, DenseJacobian, DirectSolver
+from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, DenseJacobian, DirectSolver, CSCJacobian, CSRJacobian
 
 from dymos import ODEOptions
 
@@ -43,7 +43,7 @@ class TankAloneODE(Group):
         self.add_subsystem(name='tank',
                            subsys=TankAloneComp(num_nodes=nn),
                            promotes_inputs=['m', 'm_flow', 'm_burn', 'T', 'Q_env', 'Q_sink', 'Q_out'],
-                           promotes_outputs=['m_dot', 'T_dot', 'm_recirculated'])
+                           promotes_outputs=['m_dot', 'T_dot', 'm_recirculated', 'T_o'])
 
         self.add_subsystem(name='power',
                            subsys=PowerComp(num_nodes=nn),
@@ -52,7 +52,7 @@ class TankAloneODE(Group):
         # Set solvers
         self.nonlinear_solver = NonlinearBlockGS()
         self.linear_solver = DirectSolver()
-        self.jacobian = DenseJacobian()
+        self.jacobian = CSCJacobian()
 
 if __name__ == "__main__":
     from openmdao.api import Problem, view_model, IndepVarComp
