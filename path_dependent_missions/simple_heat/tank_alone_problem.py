@@ -51,12 +51,12 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
 
     # Allow the optimizer to vary the fuel flow
     if opt_m_flow:
-        phase.add_control('m_flow', val=m_flow, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('m_flow', val=m_flow, lower=0.01, dynamic=True, opt=True, rate_continuity=True)
     else:
         phase.add_control('m_flow', val=m_flow, dynamic=True, opt=False)
 
     if opt_m_burn:
-        phase.add_control('m_burn', val=m_burn, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('m_burn', val=m_burn, lower=0.01, dynamic=True, opt=True, rate_continuity=True)
     else:
         phase.add_control('m_burn', val=m_burn, dynamic=True, opt=False)
 
@@ -70,7 +70,7 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     if opt_m_flow:
         phase.add_path_constraint('T', upper=1.)
         phase.add_path_constraint('m_flow_rate', upper=0.)
-        phase.add_path_constraint('m_constraint', upper=0.)
+        phase.add_path_constraint('m_recirculated', lower=0.)
         phase.add_path_constraint('m_flow', upper=3.)
 
     # Add the phase to the problem and set it up

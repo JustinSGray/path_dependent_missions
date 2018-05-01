@@ -18,6 +18,7 @@ def plot_results(p):
     T = p.model.phase.get_values('T', nodes='all')
     m_flow = p.model.phase.get_values('m_flow', nodes='all')
     m_burn = p.model.phase.get_values('m_burn', nodes='all')
+    m_recirculated = p.model.phase.get_values('m_recirculated', nodes='all')
     energy = p.model.phase.get_values('energy', nodes='all')
 
     import sys
@@ -33,10 +34,11 @@ def plot_results(p):
     T2 = out.get_values('T')
     m_flow2 = out.get_values('m_flow')
     m_burn2 = out.get_values('m_burn')
+    m_recirculated2 = out.get_values('m_recirculated')
     energy2 = out.get_values('energy')
 
     import matplotlib.pyplot as plt
-    f, axarr = plt.subplots(4, sharex=True)
+    f, axarr = plt.subplots(5, sharex=True)
     axarr[0].scatter(time, m)
     axarr[0].plot(time2, m2)
     axarr[0].set_ylabel('mass, kg')
@@ -52,6 +54,10 @@ def plot_results(p):
     axarr[3].scatter(time, m_burn)
     axarr[3].plot(time2, m_burn2)
     axarr[3].set_ylabel('m_burn, kg/s')
+
+    axarr[4].scatter(time, m_recirculated)
+    axarr[4].plot(time2, m_recirculated2)
+    axarr[4].set_ylabel('m_recirculated, kg/s')
 
     # axarr[4].scatter(time, energy)
     # axarr[4].plot(time2, energy2)

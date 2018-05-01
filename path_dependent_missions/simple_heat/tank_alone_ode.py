@@ -43,7 +43,7 @@ class TankAloneODE(Group):
         self.add_subsystem(name='tank',
                            subsys=TankAloneComp(num_nodes=nn),
                            promotes_inputs=['m', 'm_flow', 'm_burn', 'T', 'Q_env', 'Q_sink', 'Q_out'],
-                           promotes_outputs=['m_dot', 'T_dot', 'm_constraint'])
+                           promotes_outputs=['m_dot', 'T_dot', 'm_recirculated'])
 
         self.add_subsystem(name='power',
                            subsys=PowerComp(num_nodes=nn),
@@ -64,15 +64,15 @@ if __name__ == "__main__":
     p.model.add_subsystem('SHS', TankAloneODE(num_nodes=nn), promotes=['*'])
 
     ivc = IndepVarComp()
-    ivc.add_output('m_flow', shape=nn, val=np.linspace(0, 2, nn))
-    ivc.add_output('m_burn', shape=nn, val=0.)
-    ivc.add_output('Q_env', shape=nn, val=0.)
-    ivc.add_output('Q_sink', shape=nn, val=0.)
-    ivc.add_output('Q_out', shape=nn, val=0.)
+    ivc.add_output('m_flow', shape=nn, val=np.linspace(5, 2, nn))
+    ivc.add_output('m_burn', shape=nn, val=1.2)
+    ivc.add_output('Q_env', shape=nn, val=1.423)
+    ivc.add_output('Q_sink', shape=nn, val=24.3)
+    ivc.add_output('Q_out', shape=nn, val=0.544)
     p.model.add_subsystem('ivc', ivc, promotes=['*'])
 
     p.setup(check=True)
     p.run_model()
     p.check_partials(compact_print=True)
 
-    view_model(p)
+    # view_model(p)

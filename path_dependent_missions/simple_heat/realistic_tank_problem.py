@@ -71,7 +71,7 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     if opt_m_flow:
         phase.add_path_constraint('T', upper=356.)
         phase.add_path_constraint('m_flow_rate', upper=0.)
-        phase.add_path_constraint('m_constraint', upper=0.)
+        phase.add_path_constraint('m_recirculated', lower=0.)
         # phase.add_path_constraint('m_flow', upper=3.)
 
     # Add the phase to the problem and set it up
@@ -96,4 +96,5 @@ if __name__ == '__main__':
 
     p = setup_energy_opt(10, 3, Q_env=100e3, Q_sink=0., Q_out=40e3, m_burn=1.2, opt_m_flow=True)
     p.run_driver()
+    # p.check_partials(compact_print=True)
     plot_results(p)
