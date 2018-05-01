@@ -64,7 +64,6 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., Cv=2010., m_
     phase.add_control('Q_env', val=Q_env, dynamic=False, opt=False)
     phase.add_control('Q_sink', val=Q_sink, dynamic=False, opt=False)
     phase.add_control('Q_out', val=Q_out, dynamic=False, opt=False)
-    phase.add_control('Cv', val=Cv, dynamic=False, opt=False)
 
     # Constrain the temperature, 2nd derivative of fuel mass in the tank, and make
     # sure that the amount recirculated is at least 0, otherwise we'd burn

@@ -8,6 +8,7 @@ from dymos import ODEOptions
 
 from path_dependent_missions.simple_heat.components.tank_alone_comp import TankAloneComp
 from path_dependent_missions.simple_heat.components.power_comp import PowerComp
+from path_dependent_missions.simple_heat.components.cv_comp import CvComp
 
 
 class TankAloneODE(Group):
@@ -50,6 +51,11 @@ class TankAloneODE(Group):
                            subsys=PowerComp(num_nodes=nn),
                            promotes=['m_flow', 'power'])
 
+        self.add_subsystem(name='cv',
+                           subsys=CvComp(num_nodes=nn),
+                           promotes_inputs=['T'],
+                           promotes_outputs=['Cv'])
+
         # Set solvers
         self.nonlinear_solver = NonlinearBlockGS()
         self.linear_solver = DirectSolver()
@@ -70,7 +76,6 @@ if __name__ == "__main__":
     ivc.add_output('Q_env', shape=nn, val=1.423)
     ivc.add_output('Q_sink', shape=nn, val=24.3)
     ivc.add_output('Q_out', shape=nn, val=0.544)
-    ivc.add_output('Cv', shape=nn, val=0.444)
     p.model.add_subsystem('ivc', ivc, promotes=['*'])
 
     p.setup(check=True, force_alloc_complex=True)
