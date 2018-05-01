@@ -7,6 +7,7 @@ from dymos import Phase
 
 from path_dependent_missions.simple_heat.tank_alone_ode import TankAloneODE
 from path_dependent_missions.simple_heat.heat_plot_utils import plot_results
+
 import numpy as np
 
 
@@ -40,14 +41,14 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     phase.set_time_options(opt_initial=False, opt_duration=False)
 
     # Set the state options for mass, temperature, and energy.
-    phase.set_state_options('m', lower=1., upper=10., fix_initial=False)
-    phase.set_state_options('T', fix_initial=True)
+    phase.set_state_options('m', units='kg', lower=1e2, upper=1e5, fix_initial=True)
+    phase.set_state_options('T', units='K', fix_initial=True)
     phase.set_state_options('energy', fix_initial=True)
 
     # Minimize the energy used to pump the fuel
-    # phase.add_objective('energy', loc='final')
+    phase.add_objective('energy', loc='final')
     # phase.add_objective('m', loc='initial')
-    phase.add_objective('time', loc='final')
+    # phase.add_objective('time', loc='final')
 
     # Allow the optimizer to vary the fuel flow
     if opt_m_flow:
@@ -68,10 +69,10 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     # sure that the amount recirculated is at least 0, otherwise we'd burn
     # more fuel than we pumped.
     if opt_m_flow:
-        phase.add_path_constraint('T', upper=1.)
+        phase.add_path_constraint('T', upper=356.)
         phase.add_path_constraint('m_flow_rate', upper=0.)
         phase.add_path_constraint('m_constraint', upper=0.)
-        phase.add_path_constraint('m_flow', upper=3.)
+        # phase.add_path_constraint('m_flow', upper=3.)
 
     # Add the phase to the problem and set it up
     p.model.add_subsystem('phase', phase)
@@ -79,11 +80,13 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     p.setup(check=True, force_alloc_complex=True, mode='fwd')
 
     # Give initial values for the phase states, controls, and time
-    p['phase.states:m'] = 2.
-    p['phase.states:T'] = 1.
+    p['phase.states:m'] = 8000
+    p['phase.states:T'] = 300.
     p['phase.states:energy'] = 0.
+    p['phase.controls:m_burn'][:10] = np.atleast_2d(np.linspace(2., .5, num_seg*order)[:10]).T**2
+    p['phase.controls:m_burn'][10:] = 2.2
     p['phase.t_initial'] = 0.
-    p['phase.t_duration'] = 10.
+    p['phase.t_duration'] = 120.
 
     p.set_solver_print(level=-1)
 
@@ -91,22 +94,6 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
 
 if __name__ == '__main__':
 
-    # Here the tank just heats up
-    p = setup_energy_opt(5, 3, Q_env=1., Q_sink=0., Q_out=0.)
-    p.run_driver()
-    plot_results(p)
-
-    # Here the tank just heats up even more!
-    p = setup_energy_opt(5, 3, Q_env=1., Q_sink=1., Q_out=0.)
-    p.run_driver()
-    plot_results(p)
-
-    # We keep the tank at exactly the temperature limit
-    p = setup_energy_opt(5, 3, Q_env=.8, Q_sink=0.8, Q_out=1.2, opt_m_burn=True, opt_m_flow=True)
-    p.run_driver()
-    plot_results(p)
-
-    # Keep the tank somewhat below the limit - again, it's a dummy optimization problem
-    p = setup_energy_opt(10, 3, Q_env=1., Q_sink=1.5, Q_out=1.5, m_burn=.2, m_flow=1., opt_m_flow=True)
+    p = setup_energy_opt(10, 3, Q_env=100e3, Q_sink=0., Q_out=40e3, m_burn=1.2, opt_m_flow=True)
     p.run_driver()
     plot_results(p)

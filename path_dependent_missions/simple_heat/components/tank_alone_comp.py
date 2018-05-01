@@ -61,7 +61,7 @@ class TankAloneComp(ExplicitComponent):
         # Need to change NANs to 0s because m_flow might be 0
         sink_term = np.nan_to_num(sink_term)
 
-        outputs['T_dot'] = (Q_env + sink_term * Q_sink - m_flow * Q_out) / (m * self.Cv)
+        outputs['T_dot'] = (Q_env + sink_term * Q_sink - (m_flow - m_burn) * Q_out) / (m * self.Cv)
 
         outputs['m_constraint'] = m_burn - m_flow
 
