@@ -33,6 +33,7 @@ class TankAloneODE(Group):
     ode_options.declare_parameter('Q_env', targets=['Q_env'], units='W')
     ode_options.declare_parameter('Q_sink', targets=['Q_sink'], units='W')
     ode_options.declare_parameter('Q_out', targets=['Q_out'], units='W')
+    ode_options.declare_parameter('Cv', targets=['Cv'], units='J/(kg*K)')
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
@@ -42,7 +43,7 @@ class TankAloneODE(Group):
 
         self.add_subsystem(name='tank',
                            subsys=TankAloneComp(num_nodes=nn),
-                           promotes_inputs=['m', 'm_flow', 'm_burn', 'T', 'Q_env', 'Q_sink', 'Q_out'],
+                           promotes_inputs=['m', 'm_flow', 'm_burn', 'T', 'Q_env', 'Q_sink', 'Q_out', 'Cv'],
                            promotes_outputs=['m_dot', 'T_dot', 'm_recirculated', 'T_o'])
 
         self.add_subsystem(name='power',
@@ -69,9 +70,10 @@ if __name__ == "__main__":
     ivc.add_output('Q_env', shape=nn, val=1.423)
     ivc.add_output('Q_sink', shape=nn, val=24.3)
     ivc.add_output('Q_out', shape=nn, val=0.544)
+    ivc.add_output('Cv', shape=nn, val=0.444)
     p.model.add_subsystem('ivc', ivc, promotes=['*'])
 
-    p.setup(check=True)
+    p.setup(check=True, force_alloc_complex=True)
     p.run_model()
     p.check_partials(compact_print=True)
 

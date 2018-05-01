@@ -10,7 +10,7 @@ from path_dependent_missions.simple_heat.heat_plot_utils import plot_results
 import numpy as np
 
 
-def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, m_burn=0., opt_m_flow=False, opt_m_burn=False):
+def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., Cv=2010., m_flow=0.1, m_burn=0., opt_m_flow=False, opt_m_burn=False):
     """
     Helper function to set up and return a problem instance for an energy minimization
     of a simple thermal system.
@@ -63,6 +63,7 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
     phase.add_control('Q_env', val=Q_env, dynamic=False, opt=False)
     phase.add_control('Q_sink', val=Q_sink, dynamic=False, opt=False)
     phase.add_control('Q_out', val=Q_out, dynamic=False, opt=False)
+    phase.add_control('Cv', val=Cv, dynamic=False, opt=False)
 
     # Constrain the temperature, 2nd derivative of fuel mass in the tank, and make
     # sure that the amount recirculated is at least 0, otherwise we'd burn
@@ -92,21 +93,21 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
 if __name__ == '__main__':
 
     # Here the tank just heats up
-    p = setup_energy_opt(5, 3, Q_env=1., Q_sink=0., Q_out=0.)
+    p = setup_energy_opt(5, 3, Q_env=1e3, Q_sink=0., Q_out=0.)
     p.run_driver()
     plot_results(p)
 
     # Here the tank just heats up even more!
-    p = setup_energy_opt(5, 3, Q_env=1., Q_sink=1., Q_out=0.)
+    p = setup_energy_opt(5, 3, Q_env=1e3, Q_sink=1e3, Q_out=0.)
     p.run_driver()
     plot_results(p)
 
     # We keep the tank at exactly the temperature limit
-    p = setup_energy_opt(5, 3, Q_env=.8, Q_sink=0.8, Q_out=1.2, opt_m_burn=True, opt_m_flow=True)
+    p = setup_energy_opt(5, 3, Q_env=.8e3, Q_sink=.8e3, Q_out=1.2e3, opt_m_burn=True, opt_m_flow=True)
     p.run_driver()
     plot_results(p)
 
     # Keep the tank somewhat below the limit - again, it's a dummy optimization problem
-    p = setup_energy_opt(10, 3, Q_env=1., Q_sink=1.5, Q_out=1.5, m_burn=.2, m_flow=1., opt_m_flow=True)
+    p = setup_energy_opt(10, 3, Q_env=1.e3, Q_sink=1.5e3, Q_out=1.5e3, m_burn=.2, m_flow=1., opt_m_flow=True)
     p.run_driver()
     plot_results(p)
