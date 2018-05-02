@@ -34,13 +34,17 @@ class TankAloneODE(Group):
     ode_options.declare_parameter('Q_env', targets=['Q_env'], units='W')
     ode_options.declare_parameter('Q_sink', targets=['Q_sink'], units='W')
     ode_options.declare_parameter('Q_out', targets=['Q_out'], units='W')
-    ode_options.declare_parameter('Cv', targets=['Cv'], units='J/(kg*K)')
 
     def initialize(self):
         self.metadata.declare('num_nodes', types=int)
 
     def setup(self):
         nn = self.metadata['num_nodes']
+
+        self.add_subsystem(name='cv',
+                           subsys=CvComp(num_nodes=nn),
+                           promotes_inputs=['T'],
+                           promotes_outputs=['Cv'])
 
         self.add_subsystem(name='tank',
                            subsys=TankAloneComp(num_nodes=nn),
@@ -50,11 +54,6 @@ class TankAloneODE(Group):
         self.add_subsystem(name='power',
                            subsys=PowerComp(num_nodes=nn),
                            promotes=['m_flow', 'power'])
-
-        self.add_subsystem(name='cv',
-                           subsys=CvComp(num_nodes=nn),
-                           promotes_inputs=['T'],
-                           promotes_outputs=['Cv'])
 
         # Set solvers
         self.nonlinear_solver = NonlinearBlockGS()
