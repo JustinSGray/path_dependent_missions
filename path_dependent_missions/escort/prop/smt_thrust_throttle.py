@@ -6,7 +6,7 @@ from openmdao.api import ExplicitComponent, AnalysisError
 from path_dependent_missions.F110.smt_model import get_F110_interp
 
 
-scaler = 2.27
+scaler = 1.5
 
 class SMTThrustComp(ExplicitComponent):
 
@@ -43,9 +43,6 @@ class SMTThrustComp(ExplicitComponent):
             smt_out = self.prop_model.predict_values(self.x)
         except:
             print('@@@@@@@@@@@@@@@@@@@@@@@@ NAN DETECTED @@@@@@@@@@@@@@@')
-            print(inputs['mach'])
-            print(inputs['h'])
-            print(inputs['throttle'])
 
             raise AnalysisError()
 
