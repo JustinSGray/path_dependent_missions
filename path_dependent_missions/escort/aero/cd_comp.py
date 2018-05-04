@@ -29,6 +29,13 @@ class CDComp(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         outputs['CD'] = inputs['CD0'] + inputs['CLa'] * inputs['kappa'] * inputs['alpha']**2
+        # print('*************************')
+        # print(outputs['CD'])
+        # print(inputs['CD0'])
+        # print(inputs['CLa'])
+        # print(inputs['kappa'])
+        # print(inputs['alpha'])
+        # print()
 
     def compute_partials(self, inputs, partials):
         partials['CD', 'CLa'] = inputs['kappa'] * inputs['alpha']**2

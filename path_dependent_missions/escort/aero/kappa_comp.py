@@ -37,6 +37,8 @@ class KappaComp(ExplicitComponent):
         outputs['kappa'][idx_high] = 0.54 + 0.15 * (1.0 + np.tanh(0.25/0.06)) \
             + 0.14 * (M[idx_high] - 1.15)
 
+        outputs['kappa'] = .5
+
     def compute_partials(self, inputs, partials):
         M = inputs['mach']
 
@@ -49,3 +51,5 @@ class KappaComp(ExplicitComponent):
 
         partials['kappa', 'mach'][idx_low] = 2.5 * sech2
         partials['kappa', 'mach'][idx_high] = 0.14
+
+        partials['kappa', 'mach'] = 0.

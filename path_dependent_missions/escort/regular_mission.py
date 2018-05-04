@@ -9,6 +9,7 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 from dymos import Phase
 
 from min_time_climb_ode import MinTimeClimbODE
+from path_dependent_missions.utils.gen_mission_plot import plot_results
 
 
 def min_time_climb_problem(num_seg=3, transcription_order=5,
@@ -27,6 +28,10 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     p.driver.opt_settings['Verify level'] = 1
     p.driver.opt_settings['Function precision'] = 1.0E-6
     p.driver.opt_settings['Linesearch tolerance'] = .1
+    p.driver.options['dynamic_simul_derivs'] = True
+    p.driver.options['dynamic_simul_derivs_repeats'] = 5
+    # p.driver.options['debug_print'] = ['desvars', 'nl_cons', 'objs']
+
 
     phase = Phase(transcription, ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
@@ -43,7 +48,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     phase.set_state_options('h', fix_initial=True, lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
 
-    phase.set_state_options('v', fix_initial=True, lower=10.0,
+    phase.set_state_options('v', fix_initial=True, lower=10.0, upper=500.,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
@@ -57,7 +62,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
-    phase.add_control('throttle', val=1.0, dynamic=True, opt=True, lower=0., upper=1., rate_continuity=True)
+    phase.add_control('throttle', val=1.0, dynamic=True, opt=True, lower=0., upper=1., rate_continuity=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=100., scaler=1.0E-3, units='m')
     # phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
@@ -71,7 +76,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
     # Minimize time at the end of the phase
     # phase.add_objective('time', loc='final', ref=100.0)
-    phase.add_objective('m', loc='final', ref=-10000.0)
+    phase.add_objective('m', loc='final', ref=-1000.0)
 
     p.model.jacobian = CSCJacobian()
     p.model.linear_solver = DirectSolver()
@@ -91,9 +96,11 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(transcription='radau-ps', num_seg=10, transcription_order=3)
+    p = min_time_climb_problem(transcription='gauss-lobatto', num_seg=30, transcription_order=3)
     p.run_model()
     p.run_driver()
+
+    plot_results(p, ['h', 'm', 'r', 'alpha', 'gam', 'throttle', 'aero.mach', 'throttle_rate', 'throttle_rate2'])
 
 
 
@@ -143,23 +150,23 @@ if __name__ == '__main__':
 
     axarr[-1].set_xlabel('time, s')
 
-    # exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 100))
-    # time2 = exp_out.get_values('time')
-    # m2 = exp_out.get_values('m')
-    # mach2 = exp_out.get_values('aero.mach')
-    # h2 = exp_out.get_values('h')
-    # r2 = exp_out.get_values('r') / 1e3
-    # alpha2 = exp_out.get_values('alpha')
-    # gam2 = exp_out.get_values('gam')
-    # throttle2 = exp_out.get_values('throttle')
-    # axarr[0].plot(time2, h2, color=colors[0])
-    # axarr[1].plot(time2, mach2, color=colors[0])
-    # axarr[2].plot(time2, m2, color=colors[0])
-    # axarr[3].plot(time2, alpha2, color=colors[0])
-    # axarr[4].plot(time2, gam2, color=colors[0])
-    # axarr[5].plot(time2, throttle2, color=colors[0])
-    # axarr[6].plot(time2, r2, color=colors[0])
-    #
+    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 100))
+    time2 = exp_out.get_values('time')
+    m2 = exp_out.get_values('m')
+    mach2 = exp_out.get_values('aero.mach')
+    h2 = exp_out.get_values('h')
+    r2 = exp_out.get_values('r') / 1e3
+    alpha2 = exp_out.get_values('alpha')
+    gam2 = exp_out.get_values('gam')
+    throttle2 = exp_out.get_values('throttle')
+    axarr[0].plot(time2, h2, color=colors[0])
+    axarr[1].plot(time2, mach2, color=colors[0])
+    axarr[2].plot(time2, m2, color=colors[0])
+    axarr[3].plot(time2, alpha2, color=colors[0])
+    axarr[4].plot(time2, gam2, color=colors[0])
+    axarr[5].plot(time2, throttle2, color=colors[0])
+    axarr[6].plot(time2, r2, color=colors[0])
+
     # n_points = time.shape[0]
     # col_data = np.zeros((n_points, 8))
     # col_data[:, 0] = time[:, 0]

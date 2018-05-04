@@ -27,7 +27,6 @@ class MinTimeClimbODE(Group):
 
     ode_options.declare_parameter('alpha', targets=['alpha'], units='rad')
     ode_options.declare_parameter('S', targets=['S'], units='m**2')
-    ode_options.declare_parameter('Isp', targets=['Isp'], units='s')
     ode_options.declare_parameter('throttle', targets=['throttle'], units=None)
 
     def initialize(self):

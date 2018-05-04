@@ -17,7 +17,7 @@ class LiftDragForceComp(ExplicitComponent):
         self.add_input(name='CL', val=np.zeros(nn,), desc='lift coefficient', units=None)
         self.add_input(name='CD', val=np.zeros(nn,), desc='drag coefficient', units=None)
         self.add_input(name='q', val=np.zeros(nn,), desc='dynamic pressure', units='N/m**2')
-        self.add_input(name='S', val=np.zeros(nn,), desc='aerodynamic reference area', units='m**2')
+        self.add_input(name='S', val=49.2386 * np.ones(nn,), desc='aerodynamic reference area', units='m**2')
 
         self.add_output(name='f_lift', shape=(nn,), desc='aerodynamic lift force', units='N')
         self.add_output(name='f_drag', shape=(nn,), desc='aerodynamic drag force', units='N')
@@ -39,6 +39,10 @@ class LiftDragForceComp(ExplicitComponent):
         CD = inputs['CD']
 
         qS = q*S
+
+        # print(CL)
+        # print(CD)
+        # print()
 
         outputs['f_lift'] = qS*CL
         outputs['f_drag'] = qS*CD

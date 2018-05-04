@@ -28,6 +28,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Function precision'] = 1.0E-6
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
         p.driver.opt_settings['Major step limit'] = 0.5
+        p.driver.options['dynamic_simul_derivs'] = True
+        p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
     climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
@@ -42,7 +44,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     climb.set_state_options('h', fix_initial=True, lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
 
-    climb.set_state_options('v', fix_initial=True, lower=10.0,
+    climb.set_state_options('v', fix_initial=True, lower=10.0, upper=500.,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     climb.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
@@ -62,7 +64,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     climb.add_boundary_constraint('aero.mach', loc='final', equals=1.0, units=None)
     climb.add_boundary_constraint('gam', loc='final', equals=0.0, units='rad')
 
-    climb.add_boundary_constraint('time', loc='final', equals=350.0, units='s')
+    # climb.add_boundary_constraint('time', loc='final', equals=350.0, units='s')
 
     climb.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     climb.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
@@ -84,7 +86,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     escort.set_state_options('h', lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
 
-    escort.set_state_options('v', lower=10.0,
+    escort.set_state_options('v', lower=10.0, upper=500.,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     escort.set_state_options('gam', lower=-1.5, upper=1.5,
@@ -99,7 +101,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
 
-    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
+    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True, rate_continuity=True)
     # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
@@ -113,8 +115,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
     descent = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
-                        num_segments=num_seg*2,
-                        transcription_order=transcription_order)
+                        num_segments=2,
+                        transcription_order=5)
 
     descent.set_time_options(duration_bounds=(10, 100), duration_ref=100.0)
 
@@ -124,7 +126,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     descent.set_state_options('h', lower=0, upper=20000.0,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='m')
 
-    descent.set_state_options('v', lower=10.0,
+    descent.set_state_options('v', lower=10.0, upper=500.,
                             scaler=1.0E-2, defect_scaler=1.0E-2, units='m/s')
 
     descent.set_state_options('gam', lower=-1.5, upper=1.5,
@@ -139,13 +141,14 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
     descent.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # descent.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
 
-    descent.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=False, opt=True)
+    descent.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
     # descent.add_control('throttle', val=0., dynamic=False, opt=False)
 
-    descent.add_boundary_constraint('m', loc='final', equals=14000.0, units='kg')
+    descent.add_boundary_constraint('m', loc='final', equal=14000.0, units='kg')
     descent.add_boundary_constraint('h', loc='final', equals=100.0, units='m')
     descent.add_boundary_constraint('aero.mach', loc='final', equals=.1, units='m')
     descent.add_path_constraint(name='aero.mach', upper=1.2)
+    descent.add_path_constraint(name='alpha_rate', lower=-0.5, upper=0.5)
 
     # descent.set_objective('time', loc='final', ref=1e2)
 
@@ -283,7 +286,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    f, axarr = plt.subplots(6, sharex=True)
+    f, axarr = plt.subplots(8, sharex=True)
 
     for i, phase in enumerate([p.model.climb, p.model.escort, p.model.descent]):
 
@@ -293,27 +296,36 @@ if __name__ == '__main__':
         h = phase.get_values('h', nodes='all')
         r = phase.get_values('r', nodes='all')
         alpha = phase.get_values('alpha', nodes='all')
+        alpha_rate = phase.get_values('alpha_rate', nodes='all')
+        alpha_rate2 = phase.get_values('alpha_rate2', nodes='all')
         gam = phase.get_values('gam', nodes='all')
         throttle = phase.get_values('throttle', nodes='all')
 
-        axarr[0].plot(r, h, 'o', color=colors[i])
+        axarr[0].plot(time, h, 'o', color=colors[i])
         axarr[0].set_ylabel('altitude')
 
-        axarr[1].plot(r, mach, 'o', color=colors[i])
+        axarr[1].plot(time, mach, 'o', color=colors[i])
         axarr[1].set_ylabel('mach')
 
-        axarr[2].plot(r, m, 'o', color=colors[i])
+        axarr[2].plot(time, m, 'o', color=colors[i])
         axarr[2].set_ylabel('mass')
 
-        axarr[3].plot(r, alpha, 'o', color=colors[i])
-        axarr[3].set_ylabel('alpha')
+        axarr[3].plot(time, gam, 'o', color=colors[i])
+        axarr[3].set_ylabel('gamma')
 
-        axarr[4].plot(r, gam, 'o', color=colors[i])
-        axarr[4].set_ylabel('gamma')
+        axarr[4].plot(time, throttle, 'o', color=colors[i])
+        axarr[4].set_ylabel('throttle')
 
-        axarr[5].plot(r, throttle, 'o', color=colors[i])
-        axarr[5].set_ylabel('throttle')
-        axarr[5].set_xlabel('range')
+        axarr[5].plot(time, alpha, 'o', color=colors[i])
+        axarr[5].set_ylabel('alpha')
+
+        axarr[6].plot(time, alpha_rate, 'o', color=colors[i])
+        axarr[6].set_ylabel('alpha_rate')
+
+        axarr[7].plot(time, alpha_rate2, 'o', color=colors[i])
+        axarr[7].set_ylabel('alpha_rate2')
+
+        axarr[-1].set_xlabel('time, sec')
 
         exp_out = phase.simulate(times=np.linspace(0, p['climb.t_duration'], 100))
         time2 = exp_out.get_values('time')
@@ -322,13 +334,17 @@ if __name__ == '__main__':
         h2 = exp_out.get_values('h')
         r2 = exp_out.get_values('r')
         alpha2 = exp_out.get_values('alpha')
+        alpha_rate = exp_out.get_values('alpha_rate')
+        alpha_rate2 = exp_out.get_values('alpha_rate2')
         gam2 = exp_out.get_values('gam')
         throttle2 = exp_out.get_values('throttle')
-        axarr[0].plot(r2, h2, color=colors[i])
-        axarr[1].plot(r2, mach2, color=colors[i])
-        axarr[2].plot(r2, m2, color=colors[i])
-        axarr[3].plot(r2, alpha2, color=colors[i])
-        axarr[4].plot(r2, gam2, color=colors[i])
-        axarr[5].plot(r2, throttle2, color=colors[i])
+        axarr[0].plot(time2, h2, color=colors[i])
+        axarr[1].plot(time2, mach2, color=colors[i])
+        axarr[2].plot(time2, m2, color=colors[i])
+        axarr[3].plot(time2, gam2, color=colors[i])
+        axarr[4].plot(time2, throttle2, color=colors[i])
+        axarr[5].plot(time2, alpha2, color=colors[i])
+        axarr[6].plot(time2, alpha_rate, color=colors[i])
+        axarr[7].plot(time2, alpha_rate2, color=colors[i])
 
     plt.show()

@@ -25,6 +25,8 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-8
     p.driver.opt_settings['Verify level'] = -1
     p.driver.opt_settings['Linesearch tolerance'] = .1
+    p.driver.options['dynamic_simul_derivs'] = True
+    p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
     phase = Phase('gauss-lobatto', ode_class=ThermalMissionODE,
                         num_segments=num_seg,
@@ -47,7 +49,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
                             ref=1.0, defect_scaler=1.0, units='rad')
 
-    phase.set_state_options('m', fix_initial=True, lower=10.0, upper=1.0E5,
+    phase.set_state_options('m', fix_initial=False, lower=15e3, upper=80e3,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='kg')
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
@@ -63,6 +65,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     phase.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
+    phase.add_path_constraint(name='time', upper=110.)
 
     # Minimize time at the end of the phase
     phase.add_objective('time', loc='final', ref=100.0)
@@ -90,7 +93,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
         # phase.add_path_constraint('T', lower=0.)
         # phase.add_path_constraint('T', upper=310., ref=300.)
         phase.add_path_constraint('T_o', lower=0., units='K')
-        phase.add_path_constraint('T_o', upper=306., units='K', ref=300.)
+        phase.add_path_constraint('T_o', upper=305., units='K', ref=300.)
         # # phase.add_path_constraint('m_flow_rate', upper=0.)
         phase.add_path_constraint('m_recirculated', lower=0., units='kg/s', ref=10.)
         phase.add_path_constraint('m_flow', lower=0., upper=40., ref=20.)
@@ -103,7 +106,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[19030.468, 16841.431], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[40e3, 16841.431], nodes='disc')
     # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     # Give initial values for the phase states, controls, and time
@@ -113,7 +116,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
 
 if __name__ == '__main__':
-    p = thermal_mission_problem(num_seg=10, transcription_order=3, m_flow=20., opt_m_flow=True, Q_env=200.e3, Q_sink=300.e3, Q_out=10.e3)
+    p = thermal_mission_problem(num_seg=10, transcription_order=3, m_flow=20., opt_m_flow=True, Q_env=0.e3, Q_sink=150.e3, Q_out=0.e3)
     # p = thermal_mission_problem(num_seg=8, transcription_order=3, m_flow=0.1, opt_m_flow=True)
     p.run_model()
     p.run_driver()

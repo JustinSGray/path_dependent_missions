@@ -17,7 +17,7 @@ class SMTThrustComp(ExplicitComponent):
         num_points = self.metadata['num_nodes']
         self.prop_model = get_F110_interp()
 
-        self.add_input('mach', shape=num_points)
+        self.add_input('mach', shape=num_points, val=0.8)
         self.add_input('h', shape=num_points, units='ft')
         self.add_input('throttle', shape=num_points)
         self.add_output('thrust', shape=num_points, units='lbf')
@@ -48,6 +48,13 @@ class SMTThrustComp(ExplicitComponent):
 
         outputs['thrust'] = smt_out[:, 0] * 2 * 1e4 / scaler
         outputs['m_dot'] = -smt_out[:, 1] * 2
+
+        # print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+        # print(inputs['mach'])
+        # print(inputs['h'])
+        # print(inputs['throttle'])
+        # print(outputs['thrust'])
+        # print()
 
     def compute_partials(self, inputs, partials):
         self.x[:, 0] = inputs['mach']
