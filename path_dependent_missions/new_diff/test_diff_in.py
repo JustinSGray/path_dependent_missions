@@ -37,10 +37,10 @@ class TestX57Mod2PowerODE(unittest.TestCase):
         phase.set_state_options('m', fix_initial=True, lower=0.0, units='kg')
         phase.set_state_options('h', fix_initial=True, lower=0.0, units='m')
         phase.set_state_options('r', fix_initial=True, lower=0.0, units='m')
-        phase.set_state_options('TAS', fix_initial=True, lower=0.0, units='m')
+        phase.set_state_options('TAS', fix_initial=True, lower=0.0, units='m/s')
 
-        phase.add_control(name='h_dot', dynamic=True, opt=False, rate_param='tas_rate_comp.h_dot_rate', units='m/s')
-        phase.add_control(name='r_dot', dynamic=True, opt=False, rate_param='tas_rate_comp.r_dot_rate', units='m/s')
+        phase.add_control(name='h_dot', val=2., dynamic=True, opt=True, rate_param='h_dot_rate', units='m/s')
+        phase.add_control(name='r_dot', val=2., dynamic=True, opt=True, rate_param='r_dot_rate', units='m/s')
         phase.add_control(name='S', val=49.2386, dynamic=False, opt=False, units='m**2')
 
         # Minimize time at the end of the phase
@@ -56,20 +56,16 @@ class TestX57Mod2PowerODE(unittest.TestCase):
         p['phase.t_initial'] = 0.0
         p['phase.t_duration'] = 660
 
-        p['phase.states:gam'] = phase.interpolate(ys=[0., 0.], nodes='disc')
         p['phase.states:h'] = phase.interpolate(ys=[8000., 8000], nodes='disc')
         p['phase.states:r'] = phase.interpolate(ys=[0, 20], nodes='disc')
+        p['phase.states:TAS'] = phase.interpolate(ys=[300., 300.], nodes='all')
+        p['phase.states:m'] = 19000.0
 
-        p['phase.controls:m'] = 19000.0
-        p['phase.controls:TAS'] = phase.interpolate(ys=[300., 300.], nodes='all')
-
-        # from openmdao.api import view_model
-        # view_model(p)
-
-        p.run_driver()
+        p.run_model()
+        
 
         from path_dependent_missions.utils.gen_mission_plot import plot_results
-        plot_results(p, ['h', 'm', 'TAS', 'gam'])
+        plot_results(p, ['h', 'm', 'TAS'])
 
 if __name__ == '__main__':
 

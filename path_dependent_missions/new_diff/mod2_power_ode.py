@@ -22,8 +22,10 @@ from pass_through_comp import PassThroughComp
 @declare_state('r', rate_source='pass_through.r_dot_out',
                     units='m')
 @declare_state('TAS', targets=['flight_equilibrium_group.aero.v', 'flight_equilibrium_group.dynamics.TAS'], rate_source='tas_rate_comp.TAS_rate', units='m/s')
-@declare_parameter('h_dot', targets=['climb_rate.h_dot'], units='m/s')
-@declare_parameter('r_dot', targets=['range_rate.r'], units='m/s')
+@declare_parameter('h_dot', targets=['pass_through.h_dot_in'], units='m/s')
+@declare_parameter('h_dot_rate', targets=['tas_rate_comp.h_dot_rate'], units='m/s**2')
+@declare_parameter('r_dot', targets=['pass_through.r_dot_in'], units='m/s')
+@declare_parameter('r_dot_rate', targets=['tas_rate_comp.r_dot_rate'], units='m/s**2')
 @declare_parameter('S', targets=['flight_equilibrium_group.aero.S'],
                         units='m**2')
 class X57Mod2PowerODE(Group):
@@ -69,7 +71,7 @@ class X57Mod2PowerODE(Group):
         self.connect('flight_equilibrium_group.prop.thrust', 'flight_equilibrium_group.dynamics.thrust')
 
 
-        self.connect('tas_rate_comp.TAS_dot', 'flight_equilibrium_group.alpha_bal.TAS_rate')
+        self.connect('tas_rate_comp.TAS_rate', 'flight_equilibrium_group.alpha_bal.TAS_rate')
         self.connect('tas_rate_comp.gam_dot', 'flight_equilibrium_group.alpha_bal.gam_rate')
         self.connect('tas_rate_comp.gam', 'flight_equilibrium_group.dynamics.gam')
 

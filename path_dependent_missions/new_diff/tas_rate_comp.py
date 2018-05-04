@@ -14,17 +14,17 @@ class TASRateComp(ExplicitComponent):
         nn = self.metadata['num_nodes']
 
         self.add_input('r_dot', val=np.ones(nn), desc='rate of change of range', units='m/s')
-        self.add_input('h_dot', val=np.zeros(nn), desc='rate of change of altitude', units='m/s')
+        self.add_input('h_dot', val=np.ones(nn), desc='rate of change of altitude', units='m/s')
         self.add_input('r_dot_rate', val=np.ones(nn), desc='rate of change of rate of change of range', units='m/s**2')
-        self.add_input('h_dot_rate', val=np.zeros(nn), desc='rate of change of rate of change of altitude', units='m/s**2')
+        self.add_input('h_dot_rate', val=np.ones(nn), desc='rate of change of rate of change of altitude', units='m/s**2')
 
         self.add_output('gam', val=np.ones(nn), desc='flight path angle', units='rad')
-        self.add_output('TAS_dot', val=np.ones(nn), desc='rate of change of TAS', units='m/s**2')
+        self.add_output('TAS_rate', val=np.ones(nn), desc='rate of change of TAS', units='m/s**2')
         self.add_output('gam_dot', val=np.ones(nn), desc='rate of change of flight path angle', units='rad/s')
 
         # Setup partials
         # ar = np.arange(self.metadata['num_nodes'])
-        # self.declare_partials(of='TAS_dot', wrt=['r_dot', 'h_dot', 'h_dot_rate', 'r_dot_rate'], rows=ar, cols=ar)
+        # self.declare_partials(of='TAS_rate', wrt=['r_dot', 'h_dot', 'h_dot_rate', 'r_dot_rate'], rows=ar, cols=ar)
         # self.declare_partials(of='gam', wrt=['h_dot', 'r_dot'], rows=ar, cols=ar)
         # self.declare_partials(of='gam_dot', wrt=['h_dot_rate', 'r_dot_rate'], rows=ar, cols=ar)
 
@@ -37,7 +37,7 @@ class TASRateComp(ExplicitComponent):
         ddr = inputs['r_dot_rate']
 
         # TODO : check these computes and derivs
-        outputs['TAS_dot'] = (dh * ddh - dr * ddr) / np.sqrt(dh**2 + dr**2)
+        outputs['TAS_rate'] = (dh * ddh - dr * ddr) / np.sqrt(dh**2 + dr**2)
         outputs['gam'] = np.arctan2(dh, dr)
         outputs['gam_dot'] = (dr * ddh - dh * ddr) / (ddh + ddr)
 
@@ -49,10 +49,10 @@ class TASRateComp(ExplicitComponent):
     #
     #     TAS_rate_denom = 1/np.sqrt(dr**2 + dh**2)
     #
-    #     partials['TAS_dot', 'h_dot'] = dr * (ddh * dr - dh * ddr) / (dh**2 + dr**2)**1.5
-    #     partials['TAS_dot', 'h_dot_rate'] = dh / np.sqrt(dh**2 + dr**2)
-    #     partials['TAS_dot', 'r_dot'] = dh * (dh * ddr - ddh * dr) / (dh**2 + dr**2)**1.5
-    #     partials['TAS_dot', 'r_dot_rate'] = dr / np.sqrt(dh**2 + dr**2)
+    #     partials['TAS_rate', 'h_dot'] = dr * (ddh * dr - dh * ddr) / (dh**2 + dr**2)**1.5
+    #     partials['TAS_rate', 'h_dot_rate'] = dh / np.sqrt(dh**2 + dr**2)
+    #     partials['TAS_rate', 'r_dot'] = dh * (dh * ddr - ddh * dr) / (dh**2 + dr**2)**1.5
+    #     partials['TAS_rate', 'r_dot_rate'] = dr / np.sqrt(dh**2 + dr**2)
     #
     #     partials['gam', 'r_dot'] = -dh * TAS_rate_denom**2
     #     partials['gam', 'h_dot'] = dr * TAS_rate_denom**2
