@@ -95,7 +95,7 @@ class X57Mod2PowerODE(Group):
         flight_equilibrium_group.nonlinear_solver.options['max_sub_solves'] = 20    # default=10
         flight_equilibrium_group.nonlinear_solver.options['debug_print'] = True
         flight_equilibrium_group.nonlinear_solver.options['iprint'] = 2  # default=10
-        flight_equilibrium_group.nonlinear_solver.options['maxiter'] = 20    # default=10
+        flight_equilibrium_group.nonlinear_solver.options['maxiter'] = 0    # default=10
         # flight_equilibrium_group.nonlinear_solver.linesearch.options['print_bound_enforce'] = True
 
         # throttle_equilibrium_group.nonlinear_solver = NonlinearBlockGS()

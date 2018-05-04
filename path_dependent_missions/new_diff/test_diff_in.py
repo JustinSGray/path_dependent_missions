@@ -28,7 +28,7 @@ class TestX57Mod2PowerODE(unittest.TestCase):
 
         phase = Phase(transcription='radau-ps', ode_class=X57Mod2PowerODE,
                                    num_segments=1,
-                                   transcription_order=9)
+                                   transcription_order=3)
 
         p.model.add_subsystem('phase', phase)
 
@@ -62,10 +62,13 @@ class TestX57Mod2PowerODE(unittest.TestCase):
         p['phase.states:m'] = 19000.0
 
         p.run_model()
-        
+
+        p.model.list_inputs(print_arrays=True)
+        p.model.list_outputs(print_arrays=True, residuals=True)
+
 
         from path_dependent_missions.utils.gen_mission_plot import plot_results
-        plot_results(p, ['h', 'm', 'TAS'])
+        # plot_results(p, ['h', 'm', 'TAS'])
 
 if __name__ == '__main__':
 
