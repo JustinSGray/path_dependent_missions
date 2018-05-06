@@ -39,7 +39,10 @@ class TASRateComp(ExplicitComponent):
         # TODO : check these computes and derivs
         outputs['TAS_rate'] = (dh * ddh - dr * ddr) / np.sqrt(dh**2 + dr**2)
         outputs['gam'] = np.arctan2(dh, dr)
-        outputs['gam_dot'] = (dr * ddh - dh * ddr) / (ddh + ddr)
+        outputs['gam_dot'] = np.nan_to_num((dr * ddh - dh * ddr) / (ddh + ddr))
+
+        print('!!!!!!!!!!!!!!!!!!!!!!!!')
+        print(outputs['gam_dot'])
 
     # def compute_partials(self, inputs, partials):
     #     dh = inputs['h_dot']

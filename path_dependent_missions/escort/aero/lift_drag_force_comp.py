@@ -40,10 +40,6 @@ class LiftDragForceComp(ExplicitComponent):
 
         qS = q*S
 
-        # print(CL)
-        # print(CD)
-        # print()
-
         outputs['f_lift'] = qS*CL
         outputs['f_drag'] = qS*CD
 

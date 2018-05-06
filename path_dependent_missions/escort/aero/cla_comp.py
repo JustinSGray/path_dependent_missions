@@ -35,8 +35,6 @@ class CLaComp(ExplicitComponent):
         outputs['CLa'][idx_low] = 3.44 + c2_low
         outputs['CLa'][idx_high] = 3.44 + c2_high - 0.96/0.63 * (M[idx_high] - 1.15)
 
-        outputs['CLa'] = 5.
-
     def compute_partials(self, inputs, partials):
         M = inputs['mach']
 
@@ -49,5 +47,3 @@ class CLaComp(ExplicitComponent):
 
         partials['CLa', 'mach'][idx_low] = -2.0 * k * tanh * sech2
         partials['CLa', 'mach'][idx_high] = -32.0 / 21.0
-
-        partials['CLa', 'mach'] = 0.

@@ -39,15 +39,15 @@ class TestX57Mod2PowerODE(unittest.TestCase):
         phase.set_state_options('r', fix_initial=True, lower=0.0, units='m')
         phase.set_state_options('TAS', fix_initial=True, lower=0.0, units='m/s')
 
-        phase.add_control(name='h_dot', val=2., dynamic=True, opt=True, rate_param='h_dot_rate', units='m/s')
-        phase.add_control(name='r_dot', val=2., dynamic=True, opt=True, rate_param='r_dot_rate', units='m/s')
+        phase.add_control(name='h_dot', val=2., dynamic=False, opt=False, rate_param='h_dot_rate', units='m/s')
+        phase.add_control(name='r_dot', dynamic=False, opt=False, rate_param='r_dot_rate', units='m/s')
         phase.add_control(name='S', val=49.2386, dynamic=False, opt=False, units='m**2')
 
         # Minimize time at the end of the phase
-        phase.add_objective('time', loc='final', ref=100.0)
+        phase.add_objective('time', loc='final', ref=10.0)
         # phase.add_objective('m', loc='final', ref=-10000.0)
 
-        p.model.jacobian = CSCJacobian()
+        # p.model.jacobian = CSCJacobian()
         p.model.linear_solver = DirectSolver()
 
         p.setup(mode='fwd')
@@ -58,8 +58,14 @@ class TestX57Mod2PowerODE(unittest.TestCase):
 
         p['phase.states:h'] = phase.interpolate(ys=[8000., 8000], nodes='disc')
         p['phase.states:r'] = phase.interpolate(ys=[0, 20], nodes='disc')
-        p['phase.states:TAS'] = phase.interpolate(ys=[300., 300.], nodes='all')
+        p['phase.states:TAS'] = phase.interpolate(ys=[300., 300.], nodes='disc')
         p['phase.states:m'] = 19000.0
+
+        p['phase.controls:r_dot'] = 300.
+        p['phase.controls:h_dot'] = 0.
+        p['phase.controls:S'] = 49.2386
+
+
 
         p.run_model()
 
