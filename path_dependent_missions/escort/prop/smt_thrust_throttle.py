@@ -11,17 +11,17 @@ scaler = 1.5
 class SMTThrustComp(ExplicitComponent):
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
     def setup(self):
-        num_points = self.metadata['num_nodes']
+        num_points = self.options['num_nodes']
         self.prop_model = get_F110_interp()
 
         self.add_input('mach', shape=num_points, val=0.8)
         self.add_input('h', shape=num_points, units='ft')
         self.add_input('throttle', shape=num_points)
         self.add_output('thrust', shape=num_points, units='lbf')
-        self.add_output('m_dot', shape=num_points, units='lbm/s')
+        self.add_output('m_dot', shape=num_points, units='lbm/h')
 
         self.x = np.zeros((num_points, 3))
 
@@ -47,7 +47,7 @@ class SMTThrustComp(ExplicitComponent):
             raise AnalysisError()
 
         outputs['thrust'] = smt_out[:, 0] * 2 * 1e4 / scaler
-        outputs['m_dot'] = -smt_out[:, 1] * 2
+        outputs['m_dot'] = -smt_out[:, 1] * 2 * 1e4
 
         # print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
         # print(inputs['mach'])
@@ -69,9 +69,9 @@ class SMTThrustComp(ExplicitComponent):
         partials['thrust', 'h'] = h_derivs[:, 0] * 2 * 1e4 / 1e4 / scaler
         partials['thrust', 'throttle'] = throttle_derivs[:, 0] * 2 * 1e4 / scaler
 
-        partials['m_dot', 'mach'] = -mach_derivs[:, 1] * 2
-        partials['m_dot', 'h'] = -h_derivs[:, 1] * 2 / 1e4
-        partials['m_dot', 'throttle'] = -throttle_derivs[:, 1] * 2
+        partials['m_dot', 'mach'] = -mach_derivs[:, 1] * 2 * 1e4
+        partials['m_dot', 'h'] = -h_derivs[:, 1] * 2 / 1e4 * 1e4
+        partials['m_dot', 'throttle'] = -throttle_derivs[:, 1] * 2 * 1e4
 
 
 if __name__ == "__main__":

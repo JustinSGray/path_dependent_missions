@@ -11,12 +11,12 @@ class HeatExchangerComp(ExplicitComponent):
     """
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('q', types=float)
+        self.options.declare('num_nodes', types=int)
+        self.options.declare('q', types=float)
 
     def setup(self):
-        self.nn = self.metadata['num_nodes']
-        self.q = self.metadata['q']
+        self.nn = self.options['num_nodes']
+        self.q = self.options['q']
 
         self.add_input('T_in', shape=self.nn, units='K')
         self.add_input('m_in', shape=self.nn, units='kg/s')

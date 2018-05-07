@@ -8,10 +8,10 @@ class TASRateComp(ExplicitComponent):
     Compute TAS rate, given range rate and h rate
     """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         self.add_input('r_dot', val=np.ones(nn), desc='rate of change of range', units='m/s')
         self.add_input('h_dot', val=np.ones(nn), desc='rate of change of altitude', units='m/s')
@@ -23,7 +23,7 @@ class TASRateComp(ExplicitComponent):
         self.add_output('gam_dot', val=np.ones(nn), desc='rate of change of flight path angle', units='rad/s')
 
         # Setup partials
-        # ar = np.arange(self.metadata['num_nodes'])
+        # ar = np.arange(self.options['num_nodes'])
         # self.declare_partials(of='TAS_rate', wrt=['r_dot', 'h_dot', 'h_dot_rate', 'r_dot_rate'], rows=ar, cols=ar)
         # self.declare_partials(of='gam', wrt=['h_dot', 'r_dot'], rows=ar, cols=ar)
         # self.declare_partials(of='gam_dot', wrt=['h_dot_rate', 'r_dot_rate'], rows=ar, cols=ar)

@@ -35,11 +35,11 @@ class PropGroup(Group):
 
     """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int,
+        self.options.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         smt_prop_model = get_prop_smt_model()
         max_thrust_comp = SMTMaxThrustComp(num_nodes=nn, propulsion_model=smt_prop_model)

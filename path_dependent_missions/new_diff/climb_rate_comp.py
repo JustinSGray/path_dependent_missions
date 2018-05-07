@@ -8,10 +8,10 @@ class ClimbRateComp(ExplicitComponent):
     The equation of motion governing range.
     """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         self.add_input('TAS', val=np.ones(nn), desc='true airspeed', units='m/s')
         self.add_input('gam', val=np.ones(nn), desc='flight path angle', units='rad')
@@ -19,7 +19,7 @@ class ClimbRateComp(ExplicitComponent):
         self.add_output('h_dot', val=np.ones(nn), desc='rate of climb',
                         units='m/s')
 
-        ar = np.arange(self.metadata['num_nodes'])
+        ar = np.arange(self.options['num_nodes'])
         self.declare_partials(of='*', wrt='*', dependent=False)
         self.declare_partials(of='h_dot', wrt='TAS', rows=ar, cols=ar)
         self.declare_partials(of='h_dot', wrt='gam', rows=ar, cols=ar)

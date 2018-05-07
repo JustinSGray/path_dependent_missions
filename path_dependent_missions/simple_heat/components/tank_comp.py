@@ -9,12 +9,12 @@ class TankComp(ExplicitComponent):
     """
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('q', types=float)
+        self.options.declare('num_nodes', types=int)
+        self.options.declare('q', types=float)
 
     def setup(self):
-        self.nn = self.metadata['num_nodes']
-        self.q = self.metadata['q']
+        self.nn = self.options['num_nodes']
+        self.q = self.options['q']
 
         self.add_input('m', shape=self.nn, units='kg', val=1.)
         self.add_input('m_flow', shape=self.nn, units='kg/s')

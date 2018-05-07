@@ -36,10 +36,10 @@ class TankAloneODE(Group):
     ode_options.declare_parameter('Q_out', targets=['Q_out'], units='W')
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         self.add_subsystem(name='cv',
                            subsys=CvComp(num_nodes=nn),

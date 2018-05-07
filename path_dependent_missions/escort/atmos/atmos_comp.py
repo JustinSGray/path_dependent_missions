@@ -83,10 +83,10 @@ viscosity_interp_deriv = viscosity_interp.derivative(1)
 class AtmosComp(ExplicitComponent):
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int, default=1)
+        self.options.declare('num_nodes', types=int, default=1)
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         self.add_input('h', val=np.ones(nn), units='ft')
 

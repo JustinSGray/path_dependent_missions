@@ -93,10 +93,10 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
         # phase.add_path_constraint('T', lower=0.)
         # phase.add_path_constraint('T', upper=310., ref=300.)
         phase.add_path_constraint('T_o', lower=0., units='K')
-        phase.add_path_constraint('T_o', upper=305., units='K', ref=300.)
+        # phase.add_path_constraint('T_o', upper=305., units='K', ref=300.)
         # # phase.add_path_constraint('m_flow_rate', upper=0.)
         phase.add_path_constraint('m_recirculated', lower=0., units='kg/s', ref=10.)
-        phase.add_path_constraint('m_flow', lower=0., upper=40., ref=20.)
+        # phase.add_path_constraint('m_flow', lower=0., upper=40., ref=20., units='kg/s')
 
     p.setup(mode='fwd', check=True)
 
@@ -121,4 +121,4 @@ if __name__ == '__main__':
     p.run_model()
     p.run_driver()
 
-    plot_results(p, ['h', 'm_fuel', 'T', 'T_o', 'm_flow', 'm_burn', 'm_recirculated'])
+    plot_results(p, ['h', 'aero.mach', 'm_fuel', 'T', 'T_o', 'm_flow', 'm_burn', 'm_recirculated'])

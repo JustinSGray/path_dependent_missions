@@ -8,10 +8,10 @@ class PassThroughComp(ExplicitComponent):
     The equation of motion governing range.
     """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         self.add_input('h_dot_in', val=np.ones(nn), units='m/s')
         self.add_input('r_dot_in', val=np.ones(nn), units='m/s')
@@ -19,7 +19,7 @@ class PassThroughComp(ExplicitComponent):
         self.add_output('h_dot_out', val=np.ones(nn), units='m/s')
         self.add_output('r_dot_out', val=np.ones(nn), units='m/s')
 
-        ar = np.arange(self.metadata['num_nodes'])
+        ar = np.arange(self.options['num_nodes'])
         self.declare_partials(of='*', wrt='*', dependent=False)
         self.declare_partials(of='h_dot_out', wrt='h_dot_in', rows=ar, cols=ar, val=1.)
         self.declare_partials(of='r_dot_out', wrt='r_dot_in', rows=ar, cols=ar, val=1.)

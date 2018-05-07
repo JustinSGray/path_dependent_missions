@@ -30,11 +30,11 @@ class OASGroup(Group):
 
     """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int,
+        self.options.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
 
     def setup(self):
-        num_nodes = self.metadata['num_nodes']
+        num_nodes = self.options['num_nodes']
         num_points_x = 2
         num_points_z = 3
 

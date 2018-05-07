@@ -10,10 +10,10 @@ class CvComp(ExplicitComponent):
     """
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
     def setup(self):
-        self.nn = self.metadata['num_nodes']
+        self.nn = self.options['num_nodes']
 
         self.add_input('T', shape=self.nn, units='K')
         self.add_output('Cv', shape=self.nn, units='J/(kg*K)')

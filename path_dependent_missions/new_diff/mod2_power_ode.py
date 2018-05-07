@@ -30,11 +30,11 @@ from pass_through_comp import PassThroughComp
                         units='m**2')
 class X57Mod2PowerODE(Group):
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int,
+        self.options.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         self.add_subsystem(name='atmos',
                            subsys=AtmosComp(num_nodes=nn))

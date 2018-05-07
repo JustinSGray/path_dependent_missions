@@ -6,7 +6,7 @@ from openmdao.api import ExplicitComponent
 class BrysonMaxThrustComp(ExplicitComponent):
     """ Computes thrust for the F4's 2 J79 engines at full throttle. """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
+        self.options.declare('num_nodes', types=int)
 
         # Coefficient matrix from Bryson
         self._Q = np.array([[30.21,    -0.668,   -6.877,  1.951,   -0.1512],
@@ -16,7 +16,7 @@ class BrysonMaxThrustComp(ExplicitComponent):
                             [18.74,    -31.60,    12.04, -1.785,    0.09417]])
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
         # Inputs
         self.add_input('h', shape=(nn,), desc='altitude', units='ft')

@@ -35,19 +35,19 @@ class PropGroup(Group):
 
     """
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int,
+        self.options.declare('num_nodes', types=int,
                               desc='Number of nodes to be evaluated in the RHS')
-        self.metadata.declare('thrust_model', values=['bryson', 'mbi', 'metamodel', 'smt'],
+        self.options.declare('thrust_model', values=['bryson', 'mbi', 'metamodel', 'smt'],
                               default='mbi', desc='Type of thrust model to be used')
 
     def setup(self):
-        nn = self.metadata['num_nodes']
+        nn = self.options['num_nodes']
 
-        if self.metadata['thrust_model'] == 'bryson':
+        if self.options['thrust_model'] == 'bryson':
             max_thrust_comp = BrysonMaxThrustComp(num_nodes=nn)
-        elif self.metadata['thrust_model'] == 'mbi':
+        elif self.options['thrust_model'] == 'mbi':
             max_thrust_comp = MBIMaxThrustComp(num_nodes=nn)
-        elif self.metadata['thrust_model'] == 'smt':
+        elif self.options['thrust_model'] == 'smt':
             max_thrust_comp = SMTMaxThrustComp(num_nodes=nn)
         else:
             max_thrust_comp = MaxThrustComp(num_nodes=nn, extrapolate=True, method='cubic')

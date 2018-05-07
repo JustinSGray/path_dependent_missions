@@ -9,11 +9,11 @@ from path_dependent_missions.F110.smt_model import get_F110_interp
 class SMTMaxThrustComp(ExplicitComponent):
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('propulsion_model')
+        self.options.declare('num_nodes', types=int)
+        self.options.declare('propulsion_model')
 
     def setup(self):
-        num_points = self.metadata['num_nodes']
+        num_points = self.options['num_nodes']
         self.prop_model = get_F110_interp()
 
         self.add_input('mach', shape=num_points)

@@ -7,11 +7,11 @@ from openmdao.api import ExplicitComponent
 class SMTMaxThrustComp(ExplicitComponent):
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('propulsion_model')
+        self.options.declare('num_nodes', types=int)
+        self.options.declare('propulsion_model')
 
     def setup(self):
-        num_points = self.metadata['num_nodes']
+        num_points = self.options['num_nodes']
 
         self.add_input('mach', shape=num_points)
         self.add_input('h', shape=num_points, units='km')
@@ -28,7 +28,7 @@ class SMTMaxThrustComp(ExplicitComponent):
         M = inputs['mach']
         h_km = inputs['h']
 
-        propulsion_model = self.metadata['propulsion_model']
+        propulsion_model = self.options['propulsion_model']
 
         self.x[:, 0] = M
         self.x[:, 1] = h_km
@@ -39,7 +39,7 @@ class SMTMaxThrustComp(ExplicitComponent):
         M = inputs['mach']
         h_km = inputs['h']
 
-        propulsion_model = self.metadata['propulsion_model']
+        propulsion_model = self.options['propulsion_model']
 
         self.x[:, 0] = M
         self.x[:, 1] = h_km

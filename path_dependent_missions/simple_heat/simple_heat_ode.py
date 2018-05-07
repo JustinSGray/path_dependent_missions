@@ -34,16 +34,16 @@ class SimpleHeatODE(Group):
     ode_options.declare_parameter('m_burn', targets=['m_burn'], units='kg/s')
 
     def initialize(self):
-        self.metadata.declare('num_nodes', types=int)
-        self.metadata.declare('q_tank', types=float)
-        self.metadata.declare('q_hx1', types=float)
-        self.metadata.declare('q_hx2', types=float)
+        self.options.declare('num_nodes', types=int)
+        self.options.declare('q_tank', types=float)
+        self.options.declare('q_hx1', types=float)
+        self.options.declare('q_hx2', types=float)
 
     def setup(self):
-        nn = self.metadata['num_nodes']
-        q_tank = self.metadata['q_tank']
-        q_hx1 = self.metadata['q_hx1']
-        q_hx2 = self.metadata['q_hx2']
+        nn = self.options['num_nodes']
+        q_tank = self.options['q_tank']
+        q_hx1 = self.options['q_hx1']
+        q_hx2 = self.options['q_hx2']
 
         self.add_subsystem(name='tank',
                            subsys=TankComp(num_nodes=nn, q=q_tank),
