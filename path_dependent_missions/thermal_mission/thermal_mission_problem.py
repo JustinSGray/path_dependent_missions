@@ -18,7 +18,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = 'SNOPT'
-    p.driver.opt_settings['Major iterations limit'] = 1500
+    p.driver.opt_settings['Major iterations limit'] = 50
     p.driver.opt_settings['Iterations limit'] = 5000000000000000
     p.driver.opt_settings['iSumm'] = 6
     p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-8
@@ -49,7 +49,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
                             ref=1.0, defect_scaler=1.0, units='rad')
 
-    phase.set_state_options('m', fix_initial=False, lower=15e3, upper=80e3,
+    phase.set_state_options('m', fix_initial=True, lower=10.e3, upper=80e3,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='kg')
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
@@ -65,7 +65,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     phase.add_path_constraint(name='h', lower=100.0, upper=20000, ref=20000)
     phase.add_path_constraint(name='aero.mach', lower=0.1, upper=1.8)
-    phase.add_path_constraint(name='time', upper=110.)
+    # phase.add_path_constraint(name='time', upper=110.)
 
     # Minimize time at the end of the phase
     phase.add_objective('time', loc='final', ref=100.0)
@@ -106,7 +106,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[40e3, 16841.431], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[20.e3, 16841.431], nodes='disc')
     # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     # Give initial values for the phase states, controls, and time
