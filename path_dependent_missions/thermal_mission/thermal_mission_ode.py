@@ -12,6 +12,8 @@ from dymos.models.eom import FlightPathEOM2D
 from path_dependent_missions.simple_heat.components.tank_mission_comp import TankMissionComp
 from path_dependent_missions.simple_heat.components.power_comp import PowerComp
 from path_dependent_missions.simple_heat.components.cv_comp import CvComp
+from path_dependent_missions.simple_heat.components.pump_heating_comp import PumpHeatingComp
+from path_dependent_missions.simple_heat.components.engine_heating_comp import EngineHeatingComp
 
 class ThermalMissionODE(Group):
 
@@ -43,9 +45,13 @@ class ThermalMissionODE(Group):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
+        self.options.declare('engine_heat_coeff', types=float)
+        self.options.declare('pump_heat_coeff', types=float)
 
     def setup(self):
         nn = self.options['num_nodes']
+        engine_heat_coeff = self.options['engine_heat_coeff']
+        pump_heat_coeff = self.options['pump_heat_coeff']
 
         # Aero and mission
         self.add_subsystem(name='atmos',
@@ -85,6 +91,21 @@ class ThermalMissionODE(Group):
             promotes=['*'],
         )
 
+        self.add_subsystem(name='pump_heating_comp',
+                           subsys=PumpHeatingComp(num_nodes=nn, heat_coeff=pump_heat_coeff),
+                           promotes_inputs=['m_flow'],
+                           promotes_outputs=['Q_pump'])
+
+        self.add_subsystem(name='engine_heating_comp',
+                          subsys=EngineHeatingComp(num_nodes=nn, heat_coeff=engine_heat_coeff),
+                          promotes_inputs=['throttle'],
+                          promotes_outputs=['Q_engine'])
+
+        self.add_subsystem('Q_env_tot_comp',
+            ExecComp('Q_env_tot = Q_env + Q_pump + Q_engine', Q_env_tot=np.zeros(nn), Q_env=np.zeros(nn), Q_pump=np.zeros(nn), Q_engine=np.zeros(nn)),
+            promotes=['*'],
+        )
+
         self.add_subsystem(name='cv',
                            subsys=CvComp(num_nodes=nn),
                            promotes_inputs=['T'],
@@ -92,7 +113,7 @@ class ThermalMissionODE(Group):
 
         self.add_subsystem(name='tank',
                            subsys=TankMissionComp(num_nodes=nn),
-                           promotes_inputs=['m_fuel', 'm_flow', 'm_burn', 'T', 'Q_env', 'Q_sink', 'Q_out', 'Cv'],
+                           promotes_inputs=['m_fuel', 'm_flow', 'm_burn', 'T', 'Q_env_tot', 'Q_sink', 'Q_out', 'Cv'],
                            promotes_outputs=['T_dot', 'm_recirculated', 'T_o'])
 
         self.add_subsystem(name='power',

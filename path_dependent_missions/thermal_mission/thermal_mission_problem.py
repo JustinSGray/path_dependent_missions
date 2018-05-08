@@ -12,13 +12,13 @@ from thermal_mission_ode import ThermalMissionODE
 from path_dependent_missions.utils.gen_mission_plot import plot_results
 
 
-def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, opt_m_flow=False, opt_m_burn=False):
+def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, opt_m_flow=False, opt_m_burn=False, engine_heat_coeff=0., pump_heat_coeff=0.):
 
     p = Problem(model=Group())
 
     p.driver = pyOptSparseDriver()
     p.driver.options['optimizer'] = 'SNOPT'
-    p.driver.opt_settings['Major iterations limit'] = 50
+    p.driver.opt_settings['Major iterations limit'] = 500
     p.driver.opt_settings['Iterations limit'] = 5000000000000000
     p.driver.opt_settings['iSumm'] = 6
     p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-8
@@ -29,7 +29,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
     phase = Phase('gauss-lobatto', ode_class=ThermalMissionODE,
-                        num_segments=num_seg,
+                        ode_init_kwargs={'engine_heat_coeff':engine_heat_coeff, 'pump_heat_coeff':pump_heat_coeff}, num_segments=num_seg,
                         transcription_order=transcription_order)
 
     p.model.add_subsystem('phase', phase)
@@ -57,6 +57,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    # phase.add_control('throttle', val=1.0, lower=0.0, upper=1.0, dynamic=True, opt=True)
     phase.add_control('W0', val=10000., dynamic=False, opt=False, units='kg')
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
@@ -90,10 +91,10 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     # sure that the amount recirculated is at least 0, otherwise we'd burn
     # more fuel than we pumped.
     if opt_m_flow:
-        # phase.add_path_constraint('T', lower=0.)
-        # phase.add_path_constraint('T', upper=310., ref=300.)
+        phase.add_path_constraint('T', lower=0.)
+        phase.add_path_constraint('T', upper=310., ref=300.)
         phase.add_path_constraint('T_o', lower=0., units='K')
-        # phase.add_path_constraint('T_o', upper=305., units='K', ref=300.)
+        phase.add_path_constraint('T_o', upper=440., units='K', ref=300.)
         # # phase.add_path_constraint('m_flow_rate', upper=0.)
         phase.add_path_constraint('m_recirculated', lower=0., units='kg/s', ref=10.)
         # phase.add_path_constraint('m_flow', lower=0., upper=40., ref=20., units='kg/s')
@@ -116,7 +117,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
 
 if __name__ == '__main__':
-    p = thermal_mission_problem(num_seg=10, transcription_order=3, m_flow=20., opt_m_flow=True, Q_env=0.e3, Q_sink=150.e3, Q_out=0.e3)
+    p = thermal_mission_problem(num_seg=10, transcription_order=3, m_flow=30., opt_m_flow=True, Q_env=0.e3, Q_sink=100.e3, Q_out=0.e3, pump_heat_coeff=100.e3)
     # p = thermal_mission_problem(num_seg=8, transcription_order=3, m_flow=0.1, opt_m_flow=True)
     p.run_model()
     p.run_driver()
