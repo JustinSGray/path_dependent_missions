@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 
-def save_results(p, filename, run_sim=True):
+def save_results(p, options, filename, run_sim=True):
     """
     Helper function to perform explicit simulation at the optimized point
     and save the results.
@@ -43,7 +43,8 @@ def save_results(p, filename, run_sim=True):
 
     big_dict = {'col_vals' : col_vals,
                 'sim_vals' : sim_vals,
-                'run_sim'  : run_sim}
+                'run_sim'  : run_sim,
+                'options'  : options}
 
     with open(filename, 'wb') as f:
         pickle.dump(big_dict, f)
@@ -61,12 +62,15 @@ def plot_results(filename, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fu
         energy minimization thermal problem.
     """
 
+    constraint_list = ['T', 'T_o']
+
     with open(filename, 'rb') as f:
         big_dict = pickle.load(f)
 
     col_vals = big_dict['col_vals']
     sim_vals = big_dict['sim_vals']
     sim_plot = big_dict['run_sim']
+    options  = big_dict['options']
 
     n_vars = len(list_to_plot)
     f, axarr = plt.subplots(n_vars, sharex=True, figsize=(6, 10))
@@ -77,9 +81,8 @@ def plot_results(filename, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fu
         if sim_plot:
             axarr[i].plot(sim_vals['time'], sim_vals[name])
 
-        for line in lines:
-            if line[0] == name:
-                axarr[i].axhline(y=line[1], color='r')
+        if name in options.keys() and name in constraint_list:
+            axarr[i].axhline(y=options[name], color='r')
 
         axarr[i].set_ylabel(name)
 

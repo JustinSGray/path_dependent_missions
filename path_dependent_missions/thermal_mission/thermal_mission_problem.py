@@ -4,7 +4,7 @@ import matplotlib
 import numpy as np
 
 from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian, SqliteRecorder
+    CSCJacobian, CSRJacobian
 
 from dymos import Phase
 
@@ -12,7 +12,7 @@ from thermal_mission_ode import ThermalMissionODE
 from path_dependent_missions.utils.gen_mission_plot import save_results, plot_results
 
 
-def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0.1, opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., record=True):
+def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0.1, opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., T=None, T_o=None):
 
     p = Problem(model=Group())
 
@@ -93,35 +93,47 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     # sure that the amount recirculated is at least 0, otherwise we'd burn
     # more fuel than we pumped.
     if opt_m_recirculated:
-        phase.add_path_constraint('T', lower=0.)
-        phase.add_path_constraint('T', upper=300.5, ref=300.)
-        phase.add_path_constraint('T_o', lower=0., units='K')
-        phase.add_path_constraint('T_o', upper=305., units='K', ref=300.)
-        # # phase.add_path_constraint('m_recirculated_rate', upper=0.)
         phase.add_path_constraint('m_recirculated', lower=0., upper=10., units='kg/s', ref=10.)
 
+    if T is not None:
+        phase.add_path_constraint('T', upper=T, ref=300.)
+
+    if T_o is not None:
+        phase.add_path_constraint('T_o', upper=T_o, units='K', ref=300.)
+
+
     p.setup(mode='fwd', check=True)
-    if record:
-        p.driver.add_recorder(SqliteRecorder('out.db'))
 
-        p['phase.t_initial'] = 0.0
-        p['phase.t_duration'] = 50.
-        p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
-        p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
-        p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
-        p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-        p['phase.states:m'] = phase.interpolate(ys=[20.e3, 16841.431], nodes='disc')
-        # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
+    p['phase.t_initial'] = 0.0
+    p['phase.t_duration'] = 50.
+    p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
+    p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
+    p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
+    p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[20.e3, 16841.431], nodes='disc')
+    # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
-        # Give initial values for the phase states, controls, and time
-        p['phase.states:T'] = 300.
+    # Give initial values for the phase states, controls, and time
+    p['phase.states:T'] = 300.
 
     return p
 
 
 if __name__ == '__main__':
-    p = thermal_mission_problem(num_seg=6, transcription_order=3, m_recirculated=10., opt_m_recirculated=True, Q_env=100.e3, Q_sink=100.e3, Q_out=10.e3, engine_heat_coeff=0.e3)
+    options = {
+        'num_seg' : 6,
+        'transcription_order' : 3,
+        'm_recirculated' : 10.,
+        'opt_m_recirculated' : True,
+        'Q_env' : 100.e3,
+        'Q_sink' : 100.e3,
+        'Q_out' : 10.e3,
+        'engine_heat_coeff' : 0.e3,
+        'T' : 300.5,
+        'T_o' : 305.,
+        }
+    p = thermal_mission_problem(**options)
     p.run_driver()
 
-    save_results(p, 'test.pkl')
+    save_results(p, options, 'test.pkl')
     plot_results('test.pkl', save_fig=True)
