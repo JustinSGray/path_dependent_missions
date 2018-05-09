@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 
-def save_results(p, options, filename, run_sim=True):
+def save_results(p, filename, options={}, run_sim=True, list_to_save=['h', 'aero.mach', 'm_fuel', 'T', 'T_o', 'm_flow', 'm_burn', 'm_recirculated', 'throttle']):
     """
     Helper function to perform explicit simulation at the optimized point
     and save the results.
@@ -18,8 +18,6 @@ def save_results(p, options, filename, run_sim=True):
         This problem instance should contain the optimized outputs from the
         energy minimization thermal problem.
     """
-
-    list_to_save =  ['h', 'aero.mach', 'm_fuel', 'T', 'T_o', 'm_flow', 'm_burn', 'm_recirculated', 'throttle']
 
     if run_sim:
         # This hides the print output of simulate
@@ -36,7 +34,10 @@ def save_results(p, options, filename, run_sim=True):
     if run_sim:
         sim_vals['time'] = out.get_values('time')
     for i, name in enumerate(list_to_save):
-        col_vals[name] = p.model.phase.get_values(name, nodes='all')
+        try:
+            col_vals[name] = p.model.phase.get_values(name, nodes='all')
+        except:
+            continue
 
         if run_sim:
             sim_vals[name] = out.get_values(name)
