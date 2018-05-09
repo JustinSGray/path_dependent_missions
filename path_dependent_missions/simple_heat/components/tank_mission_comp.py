@@ -27,7 +27,6 @@ class TankMissionComp(ExplicitComponent):
 
         self.add_output('T_dot', shape=self.nn, units='K/s')
         self.add_output('T_o', shape=self.nn, units='K')
-        self.add_output('m_recirculated', shape=self.nn, units='kg/s')
 
         self.ar = ar = np.arange(self.nn)
 
@@ -38,9 +37,6 @@ class TankMissionComp(ExplicitComponent):
         self.declare_partials('T_dot', 'm_burn', rows=ar, cols=ar)
         self.declare_partials('T_dot', 'm_flow', rows=ar, cols=ar)
         self.declare_partials('T_dot', 'Cv', rows=ar, cols=ar)
-
-        self.declare_partials('m_recirculated', 'm_burn', rows=ar, cols=ar, val=-1.)
-        self.declare_partials('m_recirculated', 'm_flow', rows=ar, cols=ar, val=1.)
 
         self.declare_partials('T_o', 'T', rows=ar, cols=ar, val=1.)
         self.declare_partials('T_o', 'Q_sink', rows=ar, cols=ar)
@@ -66,8 +62,6 @@ class TankMissionComp(ExplicitComponent):
         sink_term = np.nan_to_num(sink_term)
 
         outputs['T_dot'] = (Q_env_tot + sink_term * Q_sink - (m_flow - m_burn) * Q_out) / (m_fuel * Cv)
-
-        outputs['m_recirculated'] = m_flow - m_burn
 
         outputs['T_o'] = inputs['T'] + Q_sink / (m_flow * Cv)
 

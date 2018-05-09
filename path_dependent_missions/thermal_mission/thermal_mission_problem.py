@@ -12,7 +12,7 @@ from thermal_mission_ode import ThermalMissionODE
 from path_dependent_missions.utils.gen_mission_plot import save_results, plot_results
 
 
-def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, opt_m_flow=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., record=True):
+def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0.1, opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., record=True):
 
     p = Problem(model=Group())
 
@@ -80,10 +80,10 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     phase.set_state_options('energy', fix_initial=True, ref=10e3, defect_scaler=1e-4)
 
     # Allow the optimizer to vary the fuel flow
-    if opt_m_flow:
-        phase.add_control('m_flow', val=m_flow, lower=0.5, dynamic=True, opt=True, rate_continuity=True, ref=20.)
+    if opt_m_recirculated:
+        phase.add_control('m_recirculated', val=m_recirculated, lower=0., dynamic=True, opt=True, rate_continuity=True, ref=20.)
     else:
-        phase.add_control('m_flow', val=m_flow, dynamic=True, opt=False)
+        phase.add_control('m_recirculated', val=m_recirculated, dynamic=True, opt=False)
 
     phase.add_control('Q_env', val=Q_env, dynamic=False, opt=False)
     phase.add_control('Q_sink', val=Q_sink, dynamic=False, opt=False)
@@ -92,14 +92,13 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     # Constrain the temperature, 2nd derivative of fuel mass in the tank, and make
     # sure that the amount recirculated is at least 0, otherwise we'd burn
     # more fuel than we pumped.
-    if opt_m_flow:
+    if opt_m_recirculated:
         phase.add_path_constraint('T', lower=0.)
-        phase.add_path_constraint('T', upper=310., ref=300.)
+        phase.add_path_constraint('T', upper=300.5, ref=300.)
         phase.add_path_constraint('T_o', lower=0., units='K')
-        # phase.add_path_constraint('T_o', upper=302., units='K', ref=300.)
-        # # phase.add_path_constraint('m_flow_rate', upper=0.)
-        phase.add_path_constraint('m_recirculated', lower=0., upper=0., units='kg/s', ref=10.)
-        phase.add_path_constraint('m_flow', lower=0., upper=40., ref=20., units='kg/s')
+        phase.add_path_constraint('T_o', upper=305., units='K', ref=300.)
+        # # phase.add_path_constraint('m_recirculated_rate', upper=0.)
+        phase.add_path_constraint('m_recirculated', lower=0., upper=10., units='kg/s', ref=10.)
 
     p.setup(mode='fwd', check=True)
     if record:
@@ -121,7 +120,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
 
 if __name__ == '__main__':
-    p = thermal_mission_problem(num_seg=12, transcription_order=3, m_flow=30., opt_m_flow=True, Q_env=0.e3, Q_sink=100.e3, Q_out=0.e3, engine_heat_coeff=60.e3)
+    p = thermal_mission_problem(num_seg=6, transcription_order=3, m_recirculated=10., opt_m_recirculated=True, Q_env=100.e3, Q_sink=100.e3, Q_out=10.e3, engine_heat_coeff=0.e3)
     p.run_driver()
 
     save_results(p, 'test.pkl')

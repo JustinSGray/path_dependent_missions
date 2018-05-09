@@ -93,4 +93,4 @@ def plot_results(filename, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fu
         plt.show()
 
 if __name__ == "__main__":
-    plot_results('test.pkl', save_fig=False, lines=[['T_o', 302.]])
+    plot_results('test.pkl', save_fig=False, lines=[['T', 300.5]])

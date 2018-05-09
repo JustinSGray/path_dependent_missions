@@ -38,7 +38,7 @@ class ThermalMissionODE(Group):
     ode_options.declare_state('T', units='K', rate_source='T_dot', targets=['T'])
     ode_options.declare_state('energy', units='J', rate_source='power')
 
-    ode_options.declare_parameter('m_flow', targets=['m_flow'], units='kg/s')
+    ode_options.declare_parameter('m_recirculated', targets=['m_recirculated'], units='kg/s')
     ode_options.declare_parameter('Q_env', targets=['Q_env'], units='W')
     ode_options.declare_parameter('Q_sink', targets=['Q_sink'], units='W')
     ode_options.declare_parameter('Q_out', targets=['Q_out'], units='W')
@@ -91,6 +91,11 @@ class ThermalMissionODE(Group):
             promotes=['*'],
         )
 
+        self.add_subsystem('m_flow_comp',
+            ExecComp('m_flow = m_burn + m_recirculated', m_flow=np.zeros(nn), m_burn=np.zeros(nn), m_recirculated=np.zeros(nn)),
+            promotes=['*'],
+        )
+
         self.add_subsystem(name='pump_heating_comp',
                            subsys=PumpHeatingComp(num_nodes=nn, heat_coeff=pump_heat_coeff),
                            promotes_inputs=['m_flow'],
@@ -114,7 +119,7 @@ class ThermalMissionODE(Group):
         self.add_subsystem(name='tank',
                            subsys=TankMissionComp(num_nodes=nn),
                            promotes_inputs=['m_fuel', 'm_flow', 'm_burn', 'T', 'Q_env_tot', 'Q_sink', 'Q_out', 'Cv'],
-                           promotes_outputs=['T_dot', 'm_recirculated', 'T_o'])
+                           promotes_outputs=['T_dot', 'T_o'])
 
         self.add_subsystem(name='power',
                            subsys=PowerComp(num_nodes=nn),
