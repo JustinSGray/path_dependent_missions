@@ -6,9 +6,9 @@ from openmdao.api import ExplicitComponent
 from esav.run.smt_model import get_ESAV_interp, get_data
 
 
-scaler = 0.15
-drag_scaler = .2
-lift_scaler = 2.
+scaler = 2.
+drag_scaler = 1.
+lift_scaler = 10.
 
 class AeroSMTComp(ExplicitComponent):
 

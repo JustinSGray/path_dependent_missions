@@ -9,7 +9,7 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 from dymos import Phase
 
 from min_time_climb_ode import MinTimeClimbODE
-from path_dependent_missions.utils.gen_mission_plot import plot_results
+from path_dependent_missions.utils.gen_mission_plot import save_results, plot_results
 
 
 def min_time_climb_problem(num_seg=3, transcription_order=5,
@@ -28,6 +28,7 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     p.driver.opt_settings['Verify level'] = 1
     p.driver.opt_settings['Function precision'] = 1.0E-6
     p.driver.opt_settings['Linesearch tolerance'] = .1
+    p.driver.opt_settings['Major step limit'] = .1
     p.driver.options['dynamic_simul_derivs'] = True
     p.driver.options['dynamic_simul_derivs_repeats'] = 5
     # p.driver.options['debug_print'] = ['desvars', 'nl_cons', 'objs']
@@ -97,100 +98,8 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
 if __name__ == '__main__':
     p = min_time_climb_problem(transcription='gauss-lobatto', num_seg=30, transcription_order=3)
-    p.run_model()
     p.run_driver()
 
-    plot_results(p, ['h', 'm', 'r', 'alpha', 'gam', 'throttle', 'aero.mach', 'throttle_rate', 'throttle_rate2'])
-
-
-
-    phase = p.model.phase
-
-    # Plotting below here
-    import numpy as np
-    import matplotlib.pyplot as plt
-    # plt.switch_backend('agg')
-
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    f, axarr = plt.subplots(7, sharex=True)
-
-    time = phase.get_values('time', nodes='all')
-    m = phase.get_values('m', nodes='all')
-    mach = phase.get_values('aero.mach', nodes='all')
-    h = phase.get_values('h', nodes='all')
-    r = phase.get_values('r', nodes='all') / 1e3
-    alpha = phase.get_values('alpha', nodes='all')
-    gam = phase.get_values('gam', nodes='all')
-    throttle = phase.get_values('throttle', nodes='all')
-
-    pad = 90
-
-    axarr[0].plot(time, h, 'o', color=colors[0])
-    axarr[0].set_ylabel('altitude, m', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-    # axarr[0].set_yticks([0., 15000.])
-
-    axarr[1].plot(time, mach, 'o', color=colors[0])
-    axarr[1].set_ylabel('mach', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-
-    axarr[2].plot(time, m, 'o', color=colors[0])
-    axarr[2].set_ylabel('mass, kg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-    # axarr[2].set_yticks([17695.2, 19000.])
-
-    axarr[3].plot(time, alpha, 'o', color=colors[0])
-    axarr[3].set_ylabel('alpha, deg', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-
-    axarr[4].plot(time, gam, 'o', color=colors[0])
-    axarr[4].set_ylabel('gamma', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-
-    axarr[5].plot(time, throttle, 'o', color=colors[0])
-    axarr[5].set_ylabel('throttle', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-
-    axarr[6].plot(time, r, 'o', color=colors[0])
-    axarr[6].set_ylabel('range', rotation='horizontal', horizontalalignment='left', labelpad=pad)
-
-    axarr[-1].set_xlabel('time, s')
-
-    exp_out = phase.simulate(times=np.linspace(0, p['phase.t_duration'], 100))
-    time2 = exp_out.get_values('time')
-    m2 = exp_out.get_values('m')
-    mach2 = exp_out.get_values('aero.mach')
-    h2 = exp_out.get_values('h')
-    r2 = exp_out.get_values('r') / 1e3
-    alpha2 = exp_out.get_values('alpha')
-    gam2 = exp_out.get_values('gam')
-    throttle2 = exp_out.get_values('throttle')
-    axarr[0].plot(time2, h2, color=colors[0])
-    axarr[1].plot(time2, mach2, color=colors[0])
-    axarr[2].plot(time2, m2, color=colors[0])
-    axarr[3].plot(time2, alpha2, color=colors[0])
-    axarr[4].plot(time2, gam2, color=colors[0])
-    axarr[5].plot(time2, throttle2, color=colors[0])
-    axarr[6].plot(time2, r2, color=colors[0])
-
-    # n_points = time.shape[0]
-    # col_data = np.zeros((n_points, 8))
-    # col_data[:, 0] = time[:, 0]
-    # col_data[:, 1] = m[:, 0]
-    # col_data[:, 2] = mach[:, 0]
-    # col_data[:, 3] = h[:, 0]
-    # col_data[:, 4] = r[:, 0]
-    # col_data[:, 5] = alpha[:, 0]
-    # col_data[:, 6] = gam[:, 0]
-    # col_data[:, 7] = throttle[:, 0]
-    # np.savetxt('col_data_4.dat', col_data)
-    #
-    # n_points = time2.shape[0]
-    # sim_data = np.zeros((n_points, 8))
-    # sim_data[:, 0] = time2[:, 0]
-    # sim_data[:, 1] = m2[:, 0]
-    # sim_data[:, 2] = mach2[:, 0]
-    # sim_data[:, 3] = h2[:, 0]
-    # sim_data[:, 4] = r2[:, 0]
-    # sim_data[:, 5] = alpha2[:, 0]
-    # sim_data[:, 6] = gam2[:, 0]
-    # sim_data[:, 7] = throttle2[:, 0]
-    # np.savetxt('sim_data_4.dat', sim_data)
-
-    plt.tight_layout()
-    # plt.savefig('min_time.pdf', bbox_inches='tight')
-    plt.show()
+    list_to_plot = ['h', 'm', 'r', 'alpha', 'gam', 'throttle', 'aero.mach', 'throttle_rate', 'throttle_rate2']
+    save_results(p, 'new.pkl', options={}, list_to_save=list_to_plot)
+    plot_results(['new.pkl'], save_fig=False, list_to_plot=list_to_plot)

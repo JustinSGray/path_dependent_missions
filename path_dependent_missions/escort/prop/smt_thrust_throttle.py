@@ -6,7 +6,7 @@ from openmdao.api import ExplicitComponent, AnalysisError
 from path_dependent_missions.F110.smt_model import get_F110_interp
 
 
-scaler = 1.5
+scaler = 1.
 
 class SMTThrustComp(ExplicitComponent):
 
@@ -53,8 +53,6 @@ class SMTThrustComp(ExplicitComponent):
         # print(inputs['mach'])
         # print(inputs['h'])
         # print(inputs['throttle'])
-        # print(outputs['thrust'])
-        # print()
 
     def compute_partials(self, inputs, partials):
         self.x[:, 0] = inputs['mach']

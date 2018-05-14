@@ -24,7 +24,7 @@ def setup_prob(nn, h, v):
     ivc = IndepVarComp()
     ivc.add_output('h', shape=nn, val=h, units='ft')
     ivc.add_output('v', shape=nn, val=v, units='m/s')
-    ivc.add_output('alpha', shape=nn, val=np.linspace(-2., 8., nn), units='deg')
+    ivc.add_output('alpha', shape=nn, val=np.linspace(-8., 8., nn), units='deg')
     ivc.add_output('S', shape=nn, val=49.236, units='m**2')
 
     p.model.add_subsystem('ivc', ivc, promotes=['*'])
