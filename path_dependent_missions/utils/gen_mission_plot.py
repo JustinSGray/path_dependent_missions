@@ -7,6 +7,16 @@ import matplotlib.pyplot as plt
 import pickle
 
 
+names = {}
+names['h'] = 'altitude'
+names['aero.mach'] = 'Mach'
+names['m_fuel'] = 'm_fuel'
+names['T'] = 'temp'
+names['m_flow'] = 'm_flow'
+names['m_recirculated'] = 'm_recirc'
+names['throttle'] = 'throttle'
+names['m_burn'] = 'm_burn'
+
 def save_results(p, filename, options={}, run_sim=True, list_to_save=['h', 'aero.mach', 'm_fuel', 'T', 'T_o', 'm_flow', 'm_burn', 'm_recirculated', 'throttle']):
     """
     Helper function to perform explicit simulation at the optimized point
@@ -91,7 +101,7 @@ def plot_results(filenames, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_f
     for i, name in enumerate(list_to_plot):
         if name in options.keys() and name in constraint_list:
             axarr[i].axhline(y=options[name], color='r')
-        axarr[i].set_ylabel(name)
+        axarr[i].set_ylabel(names[name])
 
     axarr[-1].set_xlabel('time, sec')
 

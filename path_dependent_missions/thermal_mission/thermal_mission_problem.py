@@ -12,7 +12,7 @@ from path_dependent_missions.thermal_mission.thermal_mission_ode import ThermalM
 from path_dependent_missions.utils.gen_mission_plot import save_results, plot_results
 
 
-def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0.1, opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., T=None, T_o=None, opt_m=False, m_initial=20.e3, transcription='gauss-lobatto'):
+def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0., opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., T=None, T_o=None, opt_m=False, m_initial=20.e3, transcription='gauss-lobatto'):
 
     p = Problem(model=Group())
 
