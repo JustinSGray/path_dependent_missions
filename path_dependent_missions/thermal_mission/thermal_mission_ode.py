@@ -59,13 +59,9 @@ class ThermalMissionODE(Group):
                            subsys=StandardAtmosphereGroup(num_nodes=nn),
                            promotes_inputs=['h'])
 
-        # self.add_subsystem(name='aero',
-        #                    subsys=AeroGroup(num_nodes=nn),
-        #                    promotes_inputs=['v', 'alpha', 'S'])
-
         self.add_subsystem(name='aero',
-                            subsys=AeroSMTGroup(num_nodes=nn),
-                            promotes_inputs=['v', 'alpha', 'S', 'h'])
+                           subsys=AeroGroup(num_nodes=nn),
+                           promotes_inputs=['v', 'alpha', 'S'])
 
         self.connect('atmos.sos', 'aero.sos')
         self.connect('atmos.rho', 'aero.rho')

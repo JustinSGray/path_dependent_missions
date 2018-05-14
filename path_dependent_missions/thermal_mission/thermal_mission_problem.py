@@ -24,7 +24,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-8
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-8
     p.driver.opt_settings['Verify level'] = -1
-    p.driver.opt_settings['Linesearch tolerance'] = .9
+    p.driver.opt_settings['Linesearch tolerance'] = .1
     p.driver.options['dynamic_simul_derivs'] = True
     p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
@@ -105,7 +105,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     # phase.add_path_constraint('m_flow', lower=0., upper=20., units='kg/s', ref=10.)
 
-    p.setup(mode='fwd', check=True, force_alloc_complex=True)
+    p.setup(mode='fwd', check=True)
 
     p['phase.t_initial'] = 0.0
     p['phase.t_duration'] = 200.
@@ -133,14 +133,13 @@ if __name__ == '__main__':
         'Q_sink' : 100.e3,
         'Q_out' : 0.e3,
         'engine_heat_coeff' : 150.e3,
-        # 'T' : 315.,
+        'T' : 315.,
         # 'T_o' : 325,
-        'm_initial' : 20.e3,
+        'm_initial' : 21.e3,
         'opt_throttle' : True,
         'opt_m' : True,
         }
     p = thermal_mission_problem(**options)
-
     p.run_driver()
 
     save_results(p, 'test2.pkl', options)
