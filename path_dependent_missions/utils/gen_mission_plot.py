@@ -50,7 +50,7 @@ def save_results(p, filename, options={}, run_sim=True, list_to_save=['h', 'aero
     with open(filename, 'wb') as f:
         pickle.dump(big_dict, f)
 
-def plot_results(filename, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fuel', 'T', 'T_o', 'm_flow', 'm_burn', 'm_recirculated', 'throttle'], lines=[]):
+def plot_results(filenames, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fuel', 'T', 'm_flow', 'm_burn', 'm_recirculated', 'throttle'], figsize=(6, 10)):
     """
     Helper function to perform explicit simulation at the optimized point
     and plot the results. Points are the collocation nodes and the solid
@@ -65,26 +65,32 @@ def plot_results(filename, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fu
 
     constraint_list = ['T', 'T_o']
 
-    with open(filename, 'rb') as f:
-        big_dict = pickle.load(f)
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-    col_vals = big_dict['col_vals']
-    sim_vals = big_dict['sim_vals']
-    sim_plot = big_dict['run_sim']
-    options  = big_dict['options']
+    if type(filenames) is not list:
+        filenames = [filenames]
 
     n_vars = len(list_to_plot)
-    f, axarr = plt.subplots(n_vars, sharex=True, figsize=(6, 10))
+    f, axarr = plt.subplots(n_vars, sharex=True, figsize=figsize)
+
+    for j, filename in enumerate(filenames):
+        with open(filename, 'rb') as f:
+            big_dict = pickle.load(f)
+
+        col_vals = big_dict['col_vals']
+        sim_vals = big_dict['sim_vals']
+        sim_plot = big_dict['run_sim']
+        options  = big_dict['options']
+
+        for i, name in enumerate(list_to_plot):
+            axarr[i].scatter(col_vals['time'], col_vals[name], color=colors[j])
+
+            if sim_plot:
+                axarr[i].plot(sim_vals['time'], sim_vals[name], color=colors[j])
 
     for i, name in enumerate(list_to_plot):
-        axarr[i].scatter(col_vals['time'], col_vals[name])
-
-        if sim_plot:
-            axarr[i].plot(sim_vals['time'], sim_vals[name])
-
         if name in options.keys() and name in constraint_list:
             axarr[i].axhline(y=options[name], color='r')
-
         axarr[i].set_ylabel(name)
 
     axarr[-1].set_xlabel('time, sec')
@@ -95,6 +101,8 @@ def plot_results(filename, save_fig=False, list_to_plot=['h', 'aero.mach', 'm_fu
         plt.savefig(filename.split('.')[0]+'.pdf')
     else:
         plt.show()
+
+    return f, axarr
 
 if __name__ == "__main__":
     plot_results('test.pkl', save_fig=False, lines=[['T', 300.5]])

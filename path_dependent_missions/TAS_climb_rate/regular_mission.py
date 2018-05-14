@@ -24,7 +24,7 @@ def ex_aircraft_mission(transcription='radau-ps', num_seg=10, transcription_orde
             p.driver.opt_settings['Major iterations limit'] = 100
             p.driver.opt_settings['iSumm'] = 6
             p.driver.opt_settings['Verify level'] = -1
-            p.driver.opt_settings['Major step limit'] = .5
+            p.driver.opt_settings['Major step limit'] = .2
 
         else:
             p.driver = ScipyOptimizeDriver()
@@ -85,7 +85,7 @@ def ex_aircraft_mission(transcription='radau-ps', num_seg=10, transcription_orde
 
 if __name__ == '__main__':
 
-    p = ex_aircraft_mission(num_seg=10)
+    p = ex_aircraft_mission(num_seg=25)
 
     p.run_driver()
 

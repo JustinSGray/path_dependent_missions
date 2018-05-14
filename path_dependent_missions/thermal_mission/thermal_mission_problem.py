@@ -8,11 +8,11 @@ from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, Direc
 
 from dymos import Phase
 
-from thermal_mission_ode import ThermalMissionODE
+from path_dependent_missions.thermal_mission.thermal_mission_ode import ThermalMissionODE
 from path_dependent_missions.utils.gen_mission_plot import save_results, plot_results
 
 
-def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0.1, opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., T=None, T_o=None):
+def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=20000., Q_env=0., Q_sink=0., Q_out=0., m_recirculated=0.1, opt_m_recirculated=False, opt_m_burn=False, opt_throttle=True, engine_heat_coeff=0., pump_heat_coeff=0., T=None, T_o=None, opt_m=False, m_initial=20.e3, transcription='gauss-lobatto'):
 
     p = Problem(model=Group())
 
@@ -24,11 +24,11 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p.driver.opt_settings['Major feasibility tolerance'] = 1.0E-8
     p.driver.opt_settings['Major optimality tolerance'] = 1.0E-8
     p.driver.opt_settings['Verify level'] = -1
-    p.driver.opt_settings['Linesearch tolerance'] = .1
+    p.driver.opt_settings['Linesearch tolerance'] = .9
     p.driver.options['dynamic_simul_derivs'] = True
     p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
-    phase = Phase('gauss-lobatto', ode_class=ThermalMissionODE,
+    phase = Phase(transcription, ode_class=ThermalMissionODE,
                         ode_init_kwargs={'engine_heat_coeff':engine_heat_coeff, 'pump_heat_coeff':pump_heat_coeff}, num_segments=num_seg,
                         transcription_order=transcription_order)
 
@@ -49,18 +49,20 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
                             ref=1.0, defect_scaler=1.0, units='rad')
 
-    phase.set_state_options('m', fix_initial=True, lower=10.e3, upper=80e3,
+    phase.set_state_options('m', fix_initial=not opt_m, lower=25.e3, upper=80e3,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='kg')
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
                       dynamic=True, rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
+
     if opt_throttle:
         phase.add_control('throttle', val=1.0, lower=0.0, upper=1.0, dynamic=True, opt=True, rate_continuity=True)
     else:
         phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
-    phase.add_control('W0', val=10000., dynamic=False, opt=False, units='kg')
+
+    phase.add_control('W0', val=15.e3, dynamic=False, opt=False, units='kg')
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
@@ -93,47 +95,53 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     # sure that the amount recirculated is at least 0, otherwise we'd burn
     # more fuel than we pumped.
     if opt_m_recirculated:
-        phase.add_path_constraint('m_recirculated', lower=0., upper=10., units='kg/s', ref=10.)
+        phase.add_path_constraint('m_flow', lower=0., upper=50., units='kg/s', ref=10.)
 
     if T is not None:
-        phase.add_path_constraint('T', upper=T, ref=300.)
+        phase.add_path_constraint('T', upper=T, units='K')
 
     if T_o is not None:
         phase.add_path_constraint('T_o', upper=T_o, units='K', ref=300.)
 
+    # phase.add_path_constraint('m_flow', lower=0., upper=20., units='kg/s', ref=10.)
 
-    p.setup(mode='fwd', check=True)
+    p.setup(mode='fwd', check=True, force_alloc_complex=True)
 
     p['phase.t_initial'] = 0.0
-    p['phase.t_duration'] = 50.
+    p['phase.t_duration'] = 200.
     p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
     p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[20.e3, 16841.431], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[m_initial, 25.e3], nodes='disc')
     # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     # Give initial values for the phase states, controls, and time
-    p['phase.states:T'] = 300.
+    p['phase.states:T'] = 310.
 
     return p
 
 
 if __name__ == '__main__':
     options = {
-        'num_seg' : 6,
+        'transcription' : 'gauss-lobatto',
+        'num_seg' : 12,
         'transcription_order' : 3,
-        'm_recirculated' : 10.,
-        'opt_m_recirculated' : True,
+        'm_recirculated' : 0.,
+        'opt_m_recirculated' : False,
         'Q_env' : 100.e3,
         'Q_sink' : 100.e3,
-        'Q_out' : 10.e3,
-        'engine_heat_coeff' : 0.e3,
-        'T' : 300.5,
-        'T_o' : 305.,
+        'Q_out' : 0.e3,
+        'engine_heat_coeff' : 150.e3,
+        # 'T' : 315.,
+        # 'T_o' : 325,
+        'm_initial' : 20.e3,
+        'opt_throttle' : True,
+        'opt_m' : True,
         }
     p = thermal_mission_problem(**options)
+
     p.run_driver()
 
-    save_results(p, options, 'test.pkl')
-    plot_results('test.pkl', save_fig=True)
+    save_results(p, 'test2.pkl', options)
+    plot_results(['test.pkl', 'test2.pkl', 'test1.pkl'], save_fig=False)

@@ -6,6 +6,7 @@ from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, De
 from dymos import ODEOptions
 
 from path_dependent_missions.escort.aero import AeroGroup
+from path_dependent_missions.escort.aero.aero_smt import AeroSMTGroup
 from path_dependent_missions.escort.prop.F110_prop import PropGroup
 from path_dependent_missions.escort.atmos.atmos_comp import AtmosComp as StandardAtmosphereGroup
 from dymos.models.eom import FlightPathEOM2D
@@ -58,9 +59,13 @@ class ThermalMissionODE(Group):
                            subsys=StandardAtmosphereGroup(num_nodes=nn),
                            promotes_inputs=['h'])
 
+        # self.add_subsystem(name='aero',
+        #                    subsys=AeroGroup(num_nodes=nn),
+        #                    promotes_inputs=['v', 'alpha', 'S'])
+
         self.add_subsystem(name='aero',
-                           subsys=AeroGroup(num_nodes=nn),
-                           promotes_inputs=['v', 'alpha', 'S'])
+                            subsys=AeroSMTGroup(num_nodes=nn),
+                            promotes_inputs=['v', 'alpha', 'S', 'h'])
 
         self.connect('atmos.sos', 'aero.sos')
         self.connect('atmos.rho', 'aero.rho')
