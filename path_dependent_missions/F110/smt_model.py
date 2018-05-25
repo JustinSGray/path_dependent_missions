@@ -59,7 +59,7 @@ if __name__ == "__main__":
     info = {'nx':3,
             'ny':2,
             'user_func':interp.predict_values,
-            'resolution':150,
+            'resolution':450,
             'plot_size':12,
             'dimension_names':[
                 'Mach number',

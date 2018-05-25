@@ -63,7 +63,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     else:
         phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
-    phase.add_control('W0', val=10.e3, dynamic=False, opt=False, units='kg')
+    phase.add_control('W0', val=10.5e3, dynamic=False, opt=False, units='kg')
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
@@ -117,7 +117,7 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
     # p['phase.states:v'][:] = 200.
     p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[m_initial, 20.e3], nodes='disc')
+    p['phase.states:m'] = phase.interpolate(ys=[m_initial, 12.e3], nodes='disc')
     p['phase.controls:alpha'] = phase.interpolate(ys=[1., 1.], nodes='all')
 
     # Give initial values for the phase states, controls, and time
