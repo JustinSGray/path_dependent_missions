@@ -39,7 +39,7 @@ def adjust_spines(ax = None, spines=['left'], off_spines=['top', 'right', 'botto
         ax.spines[spine].set_visible(False)
 
 names = {}
-names['h'] = 'altitude, m'
+names['h'] = 'altitude, km'
 names['aero.mach'] = 'Mach'
 names['m_fuel'] = 'fuel mass, kg'
 names['T'] = 'tank T, K'
@@ -104,6 +104,8 @@ def plot_results(filenames, save_fig=None, list_to_plot=['h', 'aero.mach', 'thro
         energy minimization thermal problem.
     """
 
+    fontsize = 18
+
     constraint_list = ['T', 'T_o']
 
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
@@ -127,14 +129,22 @@ def plot_results(filenames, save_fig=None, list_to_plot=['h', 'aero.mach', 'thro
         for i, name in enumerate(list_to_plot):
             # axarr[i].scatter(col_vals['time'], col_vals[name], color=colors[j+color_offset])
 
+            if name == 'h':
+                plot_vals = sim_vals[name] / 1000.
+            else:
+                plot_vals = sim_vals[name]
+
             if sim_plot:
-                axarr[i].plot(sim_vals['time'], sim_vals[name], color=colors[j+color_offset], linewidth=3.)
+                axarr[i].plot(sim_vals['time'], plot_vals, color=colors[j+color_offset], linewidth=3.)
         if sim_plot:
             max_times.append(np.max(sim_vals['time']))
 
     for i, name in enumerate(list_to_plot):
+
+        axarr[i].tick_params('both', labelsize=fontsize)
+
         if name in options.keys() and name in constraint_list:
-            axarr[i].axhline(y=options[name], color='r')
+            axarr[i].axhline(y=options[name], xmax=.98, color='lightgray', lw=3, clip_on=False, zorder=-10)
 
         if name == 'throttle':
             axarr[i].set_ylim([-.05, 1.05])
@@ -172,11 +182,12 @@ def plot_results(filenames, save_fig=None, list_to_plot=['h', 'aero.mach', 'thro
             axarr[i].xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
 
         if name in names.keys():
-            axarr[i].set_ylabel(names[name])
+            axarr[i].set_ylabel(names[name], rotation='horizontal', horizontalalignment='left', fontsize=fontsize)
+            axarr[i].get_yaxis().set_label_coords(-0.3, 0.5)
         else:
-            axarr[i].set_ylabel(name)
+            axarr[i].set_ylabel(name, fontsize=fontsize)
 
-    axarr[-1].set_xlabel('time, sec')
+    axarr[-1].set_xlabel('time, sec', fontsize=fontsize)
 
     plt.tight_layout()
 
