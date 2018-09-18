@@ -2,7 +2,7 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 
-from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, DenseJacobian, DirectSolver
+from openmdao.api import Group, IndepVarComp, NonlinearBlockGS, NewtonSolver, DirectSolver
 
 from dymos import ODEOptions
 
@@ -84,8 +84,7 @@ class SimpleHeatODE(Group):
 
         # Set solvers
         self.nonlinear_solver = NonlinearBlockGS()
-        self.linear_solver = DirectSolver()
-        self.jacobian = DenseJacobian()
+        self.linear_solver = DirectSolver(assembled_jac=True)
 
 if __name__ == "__main__":
     from openmdao.api import Problem, view_model, IndepVarComp

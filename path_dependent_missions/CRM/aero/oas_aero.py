@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import numpy as np
 
-from openmdao.api import Group, DenseJacobian, IndepVarComp
+from openmdao.api import Group, IndepVarComp
 
 from openaerostruct.geometry.inputs_group import InputsGroup
 from openaerostruct.aerodynamics.vlm_full_group import VLMFullGroup

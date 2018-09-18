@@ -1,8 +1,8 @@
 from __future__ import print_function, division, absolute_import
 import numpy as np
 
-from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian, SqliteRecorder
+from openmdao.api import Problem, Group, pyOptSparseDriver, DirectSolver, \
+    SqliteRecorder
 
 from dymos import Phase
 

@@ -3,9 +3,7 @@ import matplotlib
 # matplotlib.use('agg')
 import numpy as np
 
-from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian
-
+from openmdao.api import Problem, Group, pyOptSparseDriver, DirectSolver
 from dymos import Phase
 
 from min_time_climb_ode import MinTimeClimbODE

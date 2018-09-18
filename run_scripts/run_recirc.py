@@ -3,8 +3,7 @@ import matplotlib
 # matplotlib.use('agg')
 import numpy as np
 
-from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian
+from openmdao.api import Problem, Group, pyOptSparseDriver
 
 from dymos import Phase
 

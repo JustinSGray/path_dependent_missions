@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import numpy as np
 
-from openmdao.api import Group, DenseJacobian
+from openmdao.api import Group
 
 from .mach_comp import MachComp
 from path_dependent_missions.CRM.aero.oas_aero import OASGroup

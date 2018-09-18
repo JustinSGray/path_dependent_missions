@@ -4,8 +4,8 @@ matplotlib.use('agg')
 
 import numpy as np
 
-from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian, SqliteRecorder
+from openmdao.api import Problem, Group, pyOptSparseDriver, DirectSolver, \
+    SqliteRecorder
 
 from dymos import Phase
 from dymos.phases.components import PhaseLinkageComp

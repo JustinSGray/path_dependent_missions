@@ -3,9 +3,7 @@ import matplotlib
 # matplotlib.use('agg')
 import numpy as np
 
-from openmdao.api import Problem, Group, pyOptSparseDriver, DenseJacobian, DirectSolver, \
-    CSCJacobian, CSRJacobian
-
+from openmdao.api import Problem, Group, pyOptSparseDriver, DirectSolver
 from dymos import Phase
 
 from path_dependent_missions.thermal_mission.thermal_mission_problem import thermal_mission_problem
