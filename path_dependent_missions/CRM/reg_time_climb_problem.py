@@ -49,9 +49,9 @@ phase.set_state_options('gam', fix_initial=True, lower=-1.5, upper=1.5,
 phase.set_state_options('m', fix_initial=True, lower=1e3, upper=1.0E6,
                         scaler=1.0E-3, defect_scaler=1.0E-3)
 
-phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi/180., scaler=1, dynamic=True, rate_continuity=True)
+phase.add_control('alpha', units='rad', lower=-8. * np.pi/180., upper=8. * np.pi/180., scaler=1, rate_continuity=True)
 
-phase.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True, rate_continuity=True)
+phase.add_control('throttle', val=1.0, lower=0., upper=1., opt=True, rate_continuity=True)
 
 phase.add_boundary_constraint('h', loc='final', equals=100., scaler=1.0E-3, units='m')
 phase.add_boundary_constraint('r', loc='final', equals=1500., units='km')
@@ -67,8 +67,8 @@ phase.add_path_constraint(name='h', lower=0.)
 phase.add_objective('m', loc='final', ref=-10000.0)
 # phase.set_objective('r', loc='final', ref=-100000.0)
 
-p.model.jacobian = CSCJacobian()
-p.model.linear_solver = DirectSolver()
+p.model.linear_solver = DirectSolver(assemble_jac=True)
+p.model.options['assembled_jac_type'] = 'csc'
 
 # p.driver.add_recorder(SqliteRecorder('out.db'))
 p.setup(mode='fwd', check=True)

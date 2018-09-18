@@ -28,8 +28,6 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     p.driver.opt_settings['Linesearch tolerance'] = .1
     p.driver.opt_settings['Major step limit'] = .1
     p.driver.options['dynamic_simul_derivs'] = True
-    p.driver.options['dynamic_simul_derivs_repeats'] = 5
-    # p.driver.options['debug_print'] = ['desvars', 'nl_cons', 'objs']
 
 
     phase = Phase(transcription, ode_class=MinTimeClimbODE,
@@ -57,11 +55,11 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='kg')
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
-                      dynamic=True, rate_continuity=True)
+                      rate_continuity=True)
 
     phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
-    phase.add_control('throttle', val=1.0, dynamic=True, opt=True, lower=0., upper=1., rate_continuity=False)
+    phase.add_control('throttle', val=1.0, opt=True, lower=0., upper=1., rate_continuity=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=100., scaler=1.0E-3, units='m')
     # phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
@@ -77,8 +75,8 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     # phase.add_objective('time', loc='final', ref=100.0)
     phase.add_objective('m', loc='final', ref=-1000.0)
 
-    p.model.jacobian = CSCJacobian()
-    p.model.linear_solver = DirectSolver()
+    p.model.linear_solver = DirectSolver(assemble_jac=True)
+    p.model.options['assembled_jac_type'] = 'csc'
 
     p.setup(mode='fwd', check=True)
 

@@ -57,8 +57,8 @@ class TankAloneODE(Group):
 
         # Set solvers
         self.nonlinear_solver = NonlinearBlockGS()
-        self.linear_solver = DirectSolver()
-        self.jacobian = CSCJacobian()
+        self.linear_solver = DirectSolver(assemble_jac=True)
+        self.options['assembled_jac_type'] = 'csc'
 
 if __name__ == "__main__":
     from openmdao.api import Problem, view_model, IndepVarComp

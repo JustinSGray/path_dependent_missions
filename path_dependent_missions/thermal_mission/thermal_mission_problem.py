@@ -25,7 +25,6 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     p.driver.opt_settings['Linesearch tolerance'] = .1
     p.driver.opt_settings['Major step limit'] = .1
     p.driver.options['dynamic_simul_derivs'] = True
-    p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
     phase = Phase(transcription, ode_class=ThermalMissionODE,
                         ode_init_kwargs={'engine_heat_coeff':engine_heat_coeff, 'pump_heat_coeff':pump_heat_coeff}, num_segments=num_seg,
@@ -52,12 +51,12 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
                             scaler=1.0E-3, defect_scaler=1.0E-3, units='kg')
 
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
-                      dynamic=True, rate_continuity=True)
+                      rate_continuity=True)
 
     phase.add_control('S', val=1., units='m**2', dynamic=False, opt=False)
 
     if opt_throttle:
-        phase.add_control('throttle', val=1.0, lower=0.0, upper=1.0, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('throttle', val=1.0, lower=0.0, upper=1.0, opt=True, rate_continuity=True)
     else:
         phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
@@ -82,9 +81,9 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     # Allow the optimizer to vary the fuel flow
     if opt_m_recirculated:
-        phase.add_control('m_recirculated', val=m_recirculated, lower=0., dynamic=True, opt=True, rate_continuity=True, ref=20.)
+        phase.add_control('m_recirculated', val=m_recirculated, lower=0., opt=True, rate_continuity=True, ref=20.)
     else:
-        phase.add_control('m_recirculated', val=m_recirculated, dynamic=True, opt=False)
+        phase.add_control('m_recirculated', val=m_recirculated, opt=False)
 
     phase.add_control('Q_env', val=Q_env, dynamic=False, opt=False)
     phase.add_control('Q_sink', val=Q_sink, dynamic=False, opt=False)

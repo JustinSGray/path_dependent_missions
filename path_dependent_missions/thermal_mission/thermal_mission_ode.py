@@ -132,8 +132,8 @@ class ThermalMissionODE(Group):
 
 
         # Set solvers
-        self.linear_solver = DirectSolver()
-        self.jacobian = CSCJacobian()
+        self.linear_solver = DirectSolver(assemble_jac=True)
+        self.options['assembled_jac_type'] = 'csc'
 
 
 if __name__ == '__main__':

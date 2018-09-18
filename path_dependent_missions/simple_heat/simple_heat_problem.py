@@ -62,13 +62,13 @@ def setup_energy_opt(num_seg, order, q_tank, q_hx1, q_hx2, opt_burn=False):
     phase.set_objective('energy', loc='final')
 
     # Allow the optimizer to vary the fuel flow
-    phase.add_control('m_flow', opt=True, lower=0., upper=5., dynamic=True, rate_continuity=True)
+    phase.add_control('m_flow', opt=True, lower=0., upper=5., rate_continuity=True)
 
     # Optimize the burned fuel amount, if selected
     if opt_burn:
         phase.add_control('m_burn', opt=opt_burn, lower=.2, upper=5., dynamic=False)
     else:
-        phase.add_control('m_burn', opt=opt_burn, dynamic=True)
+        phase.add_control('m_burn', opt=opt_burn)
 
     # Constrain the temperature, 2nd derivative of fuel mass in the tank, and make
     # sure that the amount recirculated is at least 0, otherwise we'd burn

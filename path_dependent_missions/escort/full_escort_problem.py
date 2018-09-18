@@ -29,7 +29,6 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
         p.driver.opt_settings['Linesearch tolerance'] = 0.10
         p.driver.opt_settings['Major step limit'] = 0.5
         p.driver.options['dynamic_simul_derivs'] = True
-        p.driver.options['dynamic_simul_derivs_repeats'] = 5
 
     climb = Phase('gauss-lobatto', ode_class=MinTimeClimbODE,
                         num_segments=num_seg,
@@ -54,7 +53,7 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                             scaler=1.0E-3, defect_scaler=1.0E-3)
 
     climb.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
-                      dynamic=True, rate_continuity=True)
+                      rate_continuity=True)
 
     climb.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # climb.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
@@ -96,12 +95,12 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                             scaler=1.0E-3, defect_scaler=1.0E-3)
 
     escort.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
-                      dynamic=True, rate_continuity=True)
+                      rate_continuity=True)
 
     escort.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # escort.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
 
-    escort.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True, rate_continuity=True)
+    escort.add_control('throttle', val=1.0, lower=0., upper=1., opt=True, rate_continuity=True)
     # escort.add_control('throttle', val=1.0, dynamic=False, opt=False)
 
     escort.add_path_constraint(name='h', lower=meeting_altitude, upper=meeting_altitude, ref=meeting_altitude)
@@ -136,12 +135,12 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
                             scaler=1.0E-3, defect_scaler=1.0E-3)
 
     descent.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
-                      dynamic=True, rate_continuity=True)
+                      rate_continuity=True)
 
     descent.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
     # descent.add_control('Isp', val=1600.0, units='s', dynamic=False, opt=False)
 
-    descent.add_control('throttle', val=1.0, lower=0., upper=1., dynamic=True, opt=True)
+    descent.add_control('throttle', val=1.0, lower=0., upper=1., opt=True)
     # descent.add_control('throttle', val=0., dynamic=False, opt=False)
 
     descent.add_boundary_constraint('m', loc='final', equal=14000.0, units='kg')
@@ -234,8 +233,8 @@ def escort_problem(optimizer='SLSQP', num_seg=3, transcription_order=5,
 
 
 
-    p.model.jacobian = CSCJacobian()
-    p.model.linear_solver = DirectSolver()
+    p.model.linear_solver = DirectSolver(assemble_jac=True)
+    p.model.options['assembled_jac_type'] = 'csc'
 
     # p.driver.add_recorder(SqliteRecorder('escort.db'))
 

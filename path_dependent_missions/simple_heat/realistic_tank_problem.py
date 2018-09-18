@@ -52,14 +52,14 @@ def setup_energy_opt(num_seg, order, Q_env=0., Q_sink=0., Q_out=0., m_flow=0.1, 
 
     # Allow the optimizer to vary the fuel flow
     if opt_m_flow:
-        phase.add_control('m_flow', val=m_flow, lower=0.01, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('m_flow', val=m_flow, lower=0.01, opt=True, rate_continuity=True)
     else:
-        phase.add_control('m_flow', val=m_flow, dynamic=True, opt=False)
+        phase.add_control('m_flow', val=m_flow, opt=False)
 
     if opt_m_burn:
-        phase.add_control('m_burn', val=m_burn, lower=0.01, dynamic=True, opt=True, rate_continuity=True)
+        phase.add_control('m_burn', val=m_burn, lower=0.01, opt=True, rate_continuity=True)
     else:
-        phase.add_control('m_burn', val=m_burn, dynamic=True, opt=False)
+        phase.add_control('m_burn', val=m_burn, opt=False)
 
     phase.add_control('Q_env', val=Q_env, dynamic=False, opt=False)
     phase.add_control('Q_sink', val=Q_sink, dynamic=False, opt=False)
