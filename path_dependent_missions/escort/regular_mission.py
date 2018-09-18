@@ -57,8 +57,8 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
                       rate_continuity=True)
 
-    phase.add_control('S', val=49.2386, units='m**2', dynamic=False, opt=False)
-    # phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
+    phase.add_design_parameter('S', val=49.2386, units='m**2', opt=False)
+    # phase.add_design_parameter('throttle', val=1.0, opt=False)
     phase.add_control('throttle', val=1.0, opt=True, lower=0., upper=1., rate_continuity=False)
 
     phase.add_boundary_constraint('h', loc='final', equals=100., scaler=1.0E-3, units='m')
@@ -82,20 +82,20 @@ def min_time_climb_problem(num_seg=3, transcription_order=5,
 
     p['phase.t_initial'] = 0.0
     p['phase.t_duration'] = 2000.
-    p['phase.states:r'] = phase.interpolate(ys=[0.0, 1e6], nodes='disc')
-    p['phase.states:h'] = phase.interpolate(ys=[100.0, 1e4], nodes='disc')
-    p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
-    p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[30e3, 29e3], nodes='disc')
+    p['phase.states:r'] = phase.interpolate(ys=[0.0, 1e6], nodes='state_input')
+    p['phase.states:h'] = phase.interpolate(ys=[100.0, 1e4], nodes='state_input')
+    p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='state_input')
+    p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='state_input')
+    p['phase.states:m'] = phase.interpolate(ys=[30e3, 29e3], nodes='state_input')
     # p['phase.controls:alpha'] = phase.interpolate(ys=[0.50, 0.50], nodes='all')
 
     return p
 
 
 if __name__ == '__main__':
-    p = min_time_climb_problem(transcription='gauss-lobatto', num_seg=30, transcription_order=3)
-    p.run_driver()
-
+    # p = min_time_climb_problem(transcription='gauss-lobatto', num_seg=30, transcription_order=3)
+    # p.run_driver()
+    #
     list_to_plot = ['h', 'm', 'r', 'alpha', 'gam', 'throttle', 'aero.mach', 'throttle_rate', 'throttle_rate2']
-    save_results(p, 'new.pkl', options={}, list_to_save=list_to_plot)
+    # save_results(p, 'new.pkl', options={}, list_to_save=list_to_plot)
     plot_results(['new.pkl'], save_fig=False, list_to_plot=list_to_plot)

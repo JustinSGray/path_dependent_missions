@@ -48,7 +48,7 @@ names['m_recirculated'] = '$\dot m_{recirculated}$, kg/s'
 names['m_burn'] = '$\dot m_{burn}$, kg/s'
 names['throttle'] = 'throttle'
 
-def save_results(p, filename, options={}, run_sim=True, list_to_save=['h', 'aero.mach', 'throttle', 'T', 'T_o', 'm_fuel', 'm_burn', 'm_recirculated']):
+def save_results(p, filename, options={}, run_sim=True, list_to_save=['h', 'aero.mach', 'throttle', 'T', 'T_o', 'm_fuel', 'm_burn', 'm_recirculated', 'm_flow']):
     """
     Helper function to perform explicit simulation at the optimized point
     and save the results.
@@ -91,7 +91,7 @@ def save_results(p, filename, options={}, run_sim=True, list_to_save=['h', 'aero
     with open(filename, 'wb') as f:
         pickle.dump(big_dict, f)
 
-def plot_results(filenames, save_fig=None, list_to_plot=['h', 'aero.mach', 'throttle', 'T', 'm_fuel', 'm_burn', 'm_recirculated'], figsize=(6, 10), color_offset=0):
+def plot_results(filenames, save_fig=False, list_to_plot=['h', 'aero.mach', 'throttle', 'T', 'm_fuel', 'm_burn', 'm_recirculated'], figsize=(6, 10), color_offset=0):
     """
     Helper function to perform explicit simulation at the optimized point
     and plot the results. Points are the collocation nodes and the solid
@@ -191,9 +191,8 @@ def plot_results(filenames, save_fig=None, list_to_plot=['h', 'aero.mach', 'thro
 
     plt.tight_layout()
 
-    if save_fig is not None:
-        if save_fig:
-            plt.savefig(filename.split('.')[0]+'.pdf')
+    if save_fig:
+        plt.savefig(filename.split('.')[0]+'.pdf')
     else:
         plt.show()
 

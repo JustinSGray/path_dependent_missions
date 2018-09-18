@@ -53,14 +53,14 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     phase.add_control('alpha', units='deg', lower=-8.0, upper=8.0, scaler=1.0,
                       rate_continuity=True)
 
-    phase.add_control('S', val=1., units='m**2', dynamic=False, opt=False)
+    phase.add_design_parameter('S', val=1., units='m**2', opt=False)
 
     if opt_throttle:
         phase.add_control('throttle', val=1.0, lower=0.0, upper=1.0, opt=True, rate_continuity=True)
     else:
-        phase.add_control('throttle', val=1.0, dynamic=False, opt=False)
+        phase.add_design_parameter('throttle', val=1.0, opt=False)
 
-    phase.add_control('W0', val=10.5e3, dynamic=False, opt=False, units='kg')
+    phase.add_design_parameter('W0', val=10.5e3, opt=False, units='kg')
 
     phase.add_boundary_constraint('h', loc='final', equals=meeting_altitude, scaler=1.0E-3, units='m')
     phase.add_boundary_constraint('aero.mach', loc='final', equals=1., units=None)
@@ -85,9 +85,9 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
     else:
         phase.add_control('m_recirculated', val=m_recirculated, opt=False)
 
-    phase.add_control('Q_env', val=Q_env, dynamic=False, opt=False)
-    phase.add_control('Q_sink', val=Q_sink, dynamic=False, opt=False)
-    phase.add_control('Q_out', val=Q_out, dynamic=False, opt=False)
+    phase.add_design_parameter('Q_env', val=Q_env, opt=False)
+    phase.add_design_parameter('Q_sink', val=Q_sink, opt=False)
+    phase.add_design_parameter('Q_out', val=Q_out, opt=False)
 
     # Constrain the temperature, 2nd derivative of fuel mass in the tank, and make
     # sure that the amount recirculated is at least 0, otherwise we'd burn
@@ -107,15 +107,15 @@ def thermal_mission_problem(num_seg=5, transcription_order=3, meeting_altitude=2
 
     p['phase.t_initial'] = 0.0
     p['phase.t_duration'] = 200.
-    p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='disc')
-    p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='disc')
+    p['phase.states:r'] = phase.interpolate(ys=[0.0, 111319.54], nodes='state_input')
+    p['phase.states:h'] = phase.interpolate(ys=[100.0, meeting_altitude], nodes='state_input')
     # p['phase.states:h'][:] = 10000.
 
-    p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='disc')
+    p['phase.states:v'] = phase.interpolate(ys=[135.964, 283.159], nodes='state_input')
     # p['phase.states:v'][:] = 200.
-    p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='disc')
-    p['phase.states:m'] = phase.interpolate(ys=[m_initial, 12.e3], nodes='disc')
-    p['phase.controls:alpha'] = phase.interpolate(ys=[1., 1.], nodes='all')
+    p['phase.states:gam'] = phase.interpolate(ys=[0.0, 0.0], nodes='state_input')
+    p['phase.states:m'] = phase.interpolate(ys=[m_initial, 12.e3], nodes='state_input')
+    p['phase.controls:alpha'] = phase.interpolate(ys=[1., 1.], nodes='control_input')
 
     # Give initial values for the phase states, controls, and time
     p['phase.states:T'] = 310.
