@@ -4,22 +4,22 @@ from pycycle.maps.map_data import MapData
 
 
 """Python version of msfan3_3 fan map from NPSS"""
-HPCMap = MapData()
+HPCmap = MapData()
 
 # Map design point values
-HPCMap.defaults = {}
-HPCMap.defaults['alphaMap'] = 0.0
-HPCMap.defaults['NcMap'] = 1.0
-HPCMap.defaults['PR'] = 9.3
-HPCMap.defaults['RlineMap'] = 2.00
-HPCMap.defaults['effDes'] = 0.851
+HPCmap.defaults = {}
+HPCmap.defaults['alphaMap'] = 0.0
+HPCmap.defaults['NcMap'] = 1.0
+HPCmap.defaults['PR'] = 9.3
+HPCmap.defaults['RlineMap'] = 2.00
+HPCmap.defaults['effDes'] = 0.851
 RlineStall = 1.0
 
-HPCMap.alphaMap = np.array([0.000, 90.000])
-HPCMap.NcMap = np.array([0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 0.950, 1.000, 1.050, 1.100])
-HPCMap.RlineMap = np.array([1.000, 1.200, 1.400, 1.600, 1.800, 2.000, 2.200, 2.400, 2.600])
+HPCmap.alphaMap = np.array([0.000, 90.000])
+HPCmap.NcMap = np.array([0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 0.950, 1.000, 1.050, 1.100])
+HPCmap.RlineMap = np.array([1.000, 1.200, 1.400, 1.600, 1.800, 2.000, 2.200, 2.400, 2.600])
 
-HPCMap.WcMap = np.array([
+HPCmap.WcMap = np.array([
   # alpha = 0.
   [[3.278,    3.470,    3.656,    3.834,    4.004,    4.167,
     4.321,    4.467,    4.604],
@@ -65,7 +65,7 @@ HPCMap.WcMap = np.array([
    32.250,   32.264,   32.272]]
   ])
 
-HPCMap.effMap = np.array([
+HPCmap.effMap = np.array([
   # alpha = 0
   [[.6731, .6934, .7067, .7118, .7066, .6886, .6507,
     .5831, .4761],
@@ -111,7 +111,7 @@ HPCMap.effMap = np.array([
    .7875, .7826]]
   ])
 
-HPCMap.PRmap = np.array([
+HPCmap.PRmap = np.array([
   # alpha = 0
   [[1.3725,  1.3602,  1.3429,  1.3207,  1.2937,  1.2622,  1.2251,
     1.1813,  1.1315],
@@ -157,29 +157,29 @@ HPCMap.PRmap = np.array([
    10.0753,  9.7796]]
 ])
 
-#HPCMap.Nc_data, HPCMap.alpha_data, HPCMap.Rline_data = np.meshgrid(HPCMap.Nc_vals, HPCMap.alpha_vals, HPCMap.Rline_vals, sparse=False)
-HPCMap.Npts = HPCMap.NcMap.size
+#HPCmap.Nc_data, HPCmap.alpha_data, HPCmap.Rline_data = np.meshgrid(HPCmap.Nc_vals, HPCmap.alpha_vals, HPCmap.Rline_vals, sparse=False)
+HPCmap.Npts = HPCmap.NcMap.size
 
-HPCMap.units = {}
-HPCMap.units['NcMap'] = 'rpm'
-HPCMap.units['WcMap'] = 'lbm/s'
+HPCmap.units = {}
+HPCmap.units['NcMap'] = 'rpm'
+HPCmap.units['WcMap'] = 'lbm/s'
 
 
 # format for new regular grid interpolator:
 
-HPCMap.param_data = []
-HPCMap.output_data = []
+HPCmap.param_data = []
+HPCmap.output_data = []
 
-HPCMap.param_data.append({'name': 'alphaMap', 'values': HPCMap.alphaMap,
+HPCmap.param_data.append({'name': 'alphaMap', 'values': HPCmap.alphaMap,
                           'default': 0, 'units': None})
-HPCMap.param_data.append({'name': 'NcMap', 'values': HPCMap.NcMap,
+HPCmap.param_data.append({'name': 'NcMap', 'values': HPCmap.NcMap,
                           'default': 1.0, 'units': 'rpm'})
-HPCMap.param_data.append({'name': 'RlineMap', 'values': HPCMap.RlineMap,
+HPCmap.param_data.append({'name': 'RlineMap', 'values': HPCmap.RlineMap,
                           'default': 2.0, 'units': None})
 
-HPCMap.output_data.append({'name': 'WcMap', 'values': HPCMap.WcMap,
-                           'default': np.mean(HPCMap.WcMap), 'units': 'lbm/s'})
-HPCMap.output_data.append({'name': 'effMap', 'values': HPCMap.effMap,
-                           'default': np.mean(HPCMap.effMap), 'units': None})
-HPCMap.output_data.append({'name': 'PRmap', 'values': HPCMap.PRmap,
-                           'default': HPCMap.PRmap, 'units': None})
+HPCmap.output_data.append({'name': 'WcMap', 'values': HPCmap.WcMap,
+                           'default': np.mean(HPCmap.WcMap), 'units': 'lbm/s'})
+HPCmap.output_data.append({'name': 'effMap', 'values': HPCmap.effMap,
+                           'default': np.mean(HPCmap.effMap), 'units': None})
+HPCmap.output_data.append({'name': 'PRmap', 'values': HPCmap.PRmap,
+                           'default': HPCmap.defaults['PR'], 'units': None})
