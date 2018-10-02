@@ -41,41 +41,55 @@ class MixedFlowTurbofan(Group):
         self.add_subsystem('fc', FlightConditions(thermo_data=thermo_spec, elements=AIR_MIX))
         # Inlet Components
         self.add_subsystem('inlet', Inlet(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
-        self.add_subsystem('inlet_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
+
         # Fan Components - Split here for CFD integration Add a CFDStart Compomponent
         self.add_subsystem('fan', Compressor(map_data=AXI5, design=design, thermo_data=thermo_spec, elements=AIR_MIX,
-                                             map_extrap=True),promotes_inputs=[('Nmech','LP_Nmech')])
+                                             map_extrap=True),
+                           promotes_inputs=[('Nmech','LP_Nmech')])
+
         self.add_subsystem('splitter', Splitter(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
-        # Core Stream components
-        self.add_subsystem('splitter_core_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
+
+        # Bypass Stream
+        ###################
+        self.add_subsystem('bypass_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
+
+        # Core Stream
+        ##############
+        self.add_subsystem('ic_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
 
         self.add_subsystem('hpc', Compressor(map_data=HPCmap, design=design, thermo_data=thermo_spec, elements=AIR_MIX,
-                                        bleed_names=['cool1'],map_extrap=True),promotes_inputs=[('Nmech','HP_Nmech')])
-        self.add_subsystem('bld3', BleedOut(design=design, bleed_names=['cool3']))
+                                        bleed_names=['cool1', 'cool2'], map_extrap=True),
+                            promotes_inputs=[('Nmech','HP_Nmech')])
+
+        self.add_subsystem('duct_3', Duct(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
+
+        self.add_subsystem('bleed_3', BleedOut(design=design, bleed_names=['cust_bleed']))
+
         self.add_subsystem('burner', Combustor(design=design,thermo_data=thermo_spec,
                                                 inflow_elements=AIR_MIX,
                                                 air_fuel_elements=AIR_FUEL_MIX,
                                                 fuel_type='Jet-A(g)'))
         self.add_subsystem('hpt', Turbine(map_data=HPTmap, design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX,
-                                          bleed_names=['cool3'],map_extrap=True),promotes_inputs=[('Nmech','HP_Nmech')])
-        self.add_subsystem('hpt_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX))
+                                          bleed_names=['chargable', 'non_chargable'], map_extrap=True),
+                            promotes_inputs=[('Nmech','HP_Nmech')])
+
+        self.add_subsystem('it_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX))
+
+        # uncooled lpt
         self.add_subsystem('lpt', Turbine(map_data=LPTmap, design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX,
-                                        bleed_names=['cool1'],map_extrap=True), promotes_inputs=[('Nmech','LP_Nmech')])
-        self.add_subsystem('lpt_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX))
-        # Bypass Components
-        self.add_subsystem('bypass_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
-        # Mixer component
+                                          map_extrap=True), promotes_inputs=[('Nmech','LP_Nmech')])
+
         self.add_subsystem('mixer', Mixer(design=design, designed_stream=1,
                                           Fl_I1_elements=AIR_FUEL_MIX, Fl_I2_elements=AIR_MIX))
-        self.add_subsystem('mixer_duct', Duct(design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX))
-        # Afterburner Components
-        self.add_subsystem('afterburner', Combustor(design=design,thermo_data=thermo_spec,
+
+        # augmentor Components
+        self.add_subsystem('augmentor', Combustor(design=design,thermo_data=thermo_spec,
                                                 inflow_elements=AIR_FUEL_MIX,
                                                 air_fuel_elements=AIR_FUEL_MIX,
                                                 fuel_type='Jet-A(g)'))
         # End CFD HERE
         # Nozzle
-        self.add_subsystem('mixed_nozz', Nozzle(nozzType='CD', lossCoef='Cfg', thermo_data=thermo_spec, elements=AIR_FUEL_MIX))
+        self.add_subsystem('nozzle', Nozzle(nozzType='CD', lossCoef='Cfg', thermo_data=thermo_spec, elements=AIR_FUEL_MIX))
 
         # Mechanical components
         self.add_subsystem('lp_shaft', Shaft(num_ports=2),promotes_inputs=[('Nmech','LP_Nmech')])
@@ -89,31 +103,30 @@ class MixedFlowTurbofan(Group):
         #  Connecting the Flow Path
         ##########################################
         connect_flow(self, 'fc.Fl_O', 'inlet.Fl_I')
-        connect_flow(self, 'inlet.Fl_O', 'inlet_duct.Fl_I')
-        connect_flow(self, 'inlet_duct.Fl_O', 'fan.Fl_I')
+        connect_flow(self, 'inlet.Fl_O', 'fan.Fl_I')
         connect_flow(self, 'fan.Fl_O', 'splitter.Fl_I')
-        # Core connections
-        connect_flow(self, 'splitter.Fl_O1', 'splitter_core_duct.Fl_I')
-        connect_flow(self, 'splitter_core_duct.Fl_O', 'hpc.Fl_I')
-        connect_flow(self, 'hpc.Fl_O', 'bld3.Fl_I')
-        connect_flow(self, 'bld3.Fl_O', 'burner.Fl_I')
-        connect_flow(self, 'burner.Fl_O', 'hpt.Fl_I')
-        connect_flow(self, 'hpt.Fl_O', 'hpt_duct.Fl_I')
-        connect_flow(self, 'hpt_duct.Fl_O', 'lpt.Fl_I')
-        connect_flow(self, 'lpt.Fl_O', 'lpt_duct.Fl_I')
-        connect_flow(self, 'lpt_duct.Fl_O','mixer.Fl_I1')
+
         # Bypass Connections
         connect_flow(self, 'splitter.Fl_O2', 'bypass_duct.Fl_I')
         connect_flow(self, 'bypass_duct.Fl_O', 'mixer.Fl_I2')
-        #Mixer Connections
-        connect_flow(self, 'mixer.Fl_O', 'mixer_duct.Fl_I')
-        # After Burner
-        connect_flow(self,'mixer_duct.Fl_O','afterburner.Fl_I')
-        # Nozzle
-        connect_flow(self,'afterburner.Fl_O','mixed_nozz.Fl_I')
+
+        # Core connections
+        connect_flow(self, 'splitter.Fl_O1', 'ic_duct.Fl_I')
+        connect_flow(self, 'ic_duct.Fl_O', 'hpc.Fl_I')
+        connect_flow(self, 'hpc.Fl_O', 'duct_3.Fl_I')
+        connect_flow(self, 'duct_3.Fl_O', 'bleed_3.Fl_I')
+        connect_flow(self, 'bleed_3.Fl_O', 'burner.Fl_I')
+        connect_flow(self, 'burner.Fl_O', 'hpt.Fl_I')
+        connect_flow(self, 'hpt.Fl_O', 'it_duct.Fl_I')
+        connect_flow(self, 'it_duct.Fl_O', 'lpt.Fl_I')
+        connect_flow(self, 'lpt.Fl_O', 'mixer.Fl_I1')
+
+        connect_flow(self, 'mixer.Fl_O', 'augmentor.Fl_I')
+        connect_flow(self,'augmentor.Fl_O','nozzle.Fl_I')
+
         # Connect cooling flows
-        connect_flow(self, 'hpc.cool1', 'lpt.cool1', connect_stat=False)
-        connect_flow(self, 'bld3.cool3', 'hpt.cool3', connect_stat=False)
+        connect_flow(self, 'hpc.cool1', 'hpt.non_chargable', connect_stat=False)
+        connect_flow(self, 'hpc.cool2', 'hpt.chargable', connect_stat=False)
 
         ##########################################
         #  Additional Connections
@@ -122,15 +135,17 @@ class MixedFlowTurbofan(Group):
         self.connect('inlet.Fl_O:tot:P', 'perf.Pt2')
         self.connect('hpc.Fl_O:tot:P', 'perf.Pt3')
         self.connect('burner.Wfuel', 'perf.Wfuel_0')
-        self.connect('afterburner.Wfuel', 'perf.Wfuel_1')
+        self.connect('augmentor.Wfuel', 'perf.Wfuel_1')
         self.connect('inlet.F_ram', 'perf.ram_drag')
-        self.connect('mixed_nozz.Fg', 'perf.Fg_0')
+        self.connect('nozzle.Fg', 'perf.Fg_0')
 
         self.connect('fan.trq', 'lp_shaft.trq_0')
         self.connect('lpt.trq', 'lp_shaft.trq_1')
+
         self.connect('hpc.trq', 'hp_shaft.trq_0')
         self.connect('hpt.trq', 'hp_shaft.trq_1')
-        self.connect('fc.Fl_O:stat:P', 'mixed_nozz.Ps_exhaust')
+
+        self.connect('fc.Fl_O:stat:P', 'nozzle.Ps_exhaust')
 
         ##########################################
         #  Balances to define cycle convergence
@@ -152,8 +167,8 @@ class MixedFlowTurbofan(Group):
             self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR_core')
 
             balance.add_balance('FAR_ab', eq_units='degR', lower=1e-4, val=.017)
-            self.connect('balance.FAR_ab', 'afterburner.Fl_I:FAR')
-            self.connect('afterburner.Fl_O:tot:T', 'balance.lhs:FAR_ab')
+            self.connect('balance.FAR_ab', 'augmentor.Fl_I:FAR')
+            self.connect('augmentor.Fl_O:tot:T', 'balance.lhs:FAR_ab')
 
             balance.add_balance('lpt_PR', val=1.5, lower=1.001, upper=8, eq_units='hp', rhs_val=0., res_ref=1)
             self.connect('balance.lpt_PR', 'lpt.PR')
@@ -166,7 +181,7 @@ class MixedFlowTurbofan(Group):
         else: # off design
             balance.add_balance('W', lower=1e-3, upper=200., units='lbm/s', eq_units='inch**2')
             self.connect('balance.W', 'fc.fs.W')
-            self.connect('mixed_nozz.Throat:stat:area', 'balance.lhs:W')
+            self.connect('nozzle.Throat:stat:area', 'balance.lhs:W')
 
             balance.add_balance('BPR', lower=0.25, upper=5.0, eq_units='psi')
             self.connect('balance.BPR', 'splitter.BPR')
@@ -178,8 +193,8 @@ class MixedFlowTurbofan(Group):
             self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR_core')
 
             balance.add_balance('FAR_ab', eq_units='degR', lower=1e-4, upper=.06, val=.017)
-            self.connect('balance.FAR_ab', 'afterburner.Fl_I:FAR')
-            self.connect('afterburner.Fl_O:tot:T', 'balance.lhs:FAR_ab')
+            self.connect('balance.FAR_ab', 'augmentor.Fl_I:FAR')
+            self.connect('augmentor.Fl_O:tot:T', 'balance.lhs:FAR_ab')
 
             balance.add_balance('lp_Nmech', val=1000., units='rpm', lower=500., eq_units='hp', rhs_val=0., res_ref=1e3)
             self.connect('balance.lp_Nmech', 'LP_Nmech')
@@ -193,13 +208,12 @@ class MixedFlowTurbofan(Group):
         newton.options['atol'] = 1e-6
         newton.options['rtol'] = 1e-10
         newton.options['iprint'] = 2
-        newton.options['maxiter'] = 10
+        newton.options['maxiter'] = 20
         newton.options['solve_subsystems'] = True
         newton.options['max_sub_solves'] = 100
         newton.linesearch = BoundsEnforceLS()
         newton.linesearch.options['bound_enforcement'] = 'scalar'
         newton.linesearch.options['iprint'] = -1
-
 
         self.linear_solver = DirectSolver(assemble_jac=True)
 
@@ -210,7 +224,9 @@ def print_perf(prob,ptName):
     #print('W',prob[ptName+'.wDV.wDes'])
     print('Fnet uninst.',prob[ptName+'.perf.Fn'])
 
+
 if __name__ == "__main__":
+
     import time
     from openmdao.api import Problem
 
@@ -238,22 +254,22 @@ if __name__ == "__main__":
     element_params.add_output('inlet:ram_recovery', 0.9990)
     element_params.add_output('inlet:MN_out', 0.751)
 
-    element_params.add_output('inlet_duct:dPqP', 0.0)
-    element_params.add_output('inlet_duct:MN_out', 0.4)
-
     element_params.add_output('fan:effDes', 0.8700)
     element_params.add_output('fan:MN_out', 0.4578)
 
     element_params.add_output('splitter:MN_out1', 0.3104)
     element_params.add_output('splitter:MN_out2', 0.4518)
 
-    element_params.add_output('splitter_core_duct:dPqP', 0.0048)
-    element_params.add_output('splitter_core_duct:MN_out', 0.3121)
+    element_params.add_output('ic_duct:dPqP', 0.0048)
+    element_params.add_output('ic_duct:MN_out', 0.3121)
 
     element_params.add_output('hpc:effDes', 0.8707)
     element_params.add_output('hpc:MN_out', 0.2442)
 
-    element_params.add_output('bld3:MN_out', 0.3000)
+    element_params.add_output('duct_3:dPqP', 0.0048)
+    element_params.add_output('duct_3:MN_out', 0.2)
+
+    element_params.add_output('bleed_3:MN_out', 0.3000)
 
     element_params.add_output('burner:dPqP', 0.0540)
     element_params.add_output('burner:MN_out', 0.1025)
@@ -261,40 +277,38 @@ if __name__ == "__main__":
     element_params.add_output('hpt:effDes', 0.8888)
     element_params.add_output('hpt:MN_out', 0.3650)
 
-    element_params.add_output('hpt_duct:dPqP', 0.0051)
-    element_params.add_output('hpt_duct:MN_out', 0.3063)
+    element_params.add_output('it_duct:dPqP', 0.0051)
+    element_params.add_output('it_duct:MN_out', 0.3063)
 
     element_params.add_output('lpt:effDes', 0.8996)
     element_params.add_output('lpt:MN_out', 0.4127)
-
-    element_params.add_output('lpt_duct:dPqP', 0.0107)
-    element_params.add_output('lpt_duct:MN_out', 0.4463)
 
     element_params.add_output('bypass_duct:dPqP', 0.0107)
     element_params.add_output('bypass_duct:MN_out', 0.4463)
 
     # No params for mixer
 
-    element_params.add_output('mixer_duct:dPqP', 0.0107)
-    element_params.add_output('mixer_duct:MN_out', 0.4463)
+    element_params.add_output('augmentor:dPqP', 0.0540)
+    element_params.add_output('augmentor:MN_out', 0.1025)
 
-    element_params.add_output('afterburner:dPqP', 0.0540)
-    element_params.add_output('afterburner:MN_out', 0.1025)
-
-    element_params.add_output('mixed_nozz:Cfg', 0.9933)
+    element_params.add_output('nozzle:Cfg', 0.9933)
 
     element_params.add_output('lp_shaft:Nmech', 4666.1, units='rpm')
     element_params.add_output('hp_shaft:Nmech', 14705.7, units='rpm')
     element_params.add_output('hp_shaft:HPX', 250.0, units='hp')
 
-    element_params.add_output('hpc:cool1:frac_W', 0.050708)
-    element_params.add_output('hpc:cool1:frac_P', 0.5)
-    element_params.add_output('hpc:cool1:frac_work', 0.5)
+    element_params.add_output('hpc:cool1:frac_W', 0.09)
+    element_params.add_output('hpc:cool1:frac_P', 1.0)
+    element_params.add_output('hpc:cool1:frac_work', 1.0)
 
-    element_params.add_output('bld3:cool3:frac_W', 0.067214)
+    element_params.add_output('hpc:cool2:frac_W', 0.07)
+    element_params.add_output('hpc:cool2:frac_P', 0.5)
+    element_params.add_output('hpc:cool2:frac_work', 0.5)
 
-    element_params.add_output('hpt:cool3:frac_P', 1.0)
-    element_params.add_output('lpt:cool1:frac_P', 1.0)
+    element_params.add_output('bleed_3:cust_bleed:frac_W', 0.07)
+
+    element_params.add_output('hpt:chargable:frac_P', 0.0)
+    element_params.add_output('hpt:non_chargable:frac_P', 1.0)
 
     #####################
     # DESIGN CASE
@@ -312,9 +326,6 @@ if __name__ == "__main__":
     prob.model.connect('inlet:ram_recovery', 'DESIGN.inlet.ram_recovery')
     prob.model.connect('inlet:MN_out', 'DESIGN.inlet.MN')
 
-    prob.model.connect('inlet_duct:dPqP', 'DESIGN.inlet_duct.dPqP')
-    prob.model.connect('inlet_duct:MN_out', 'DESIGN.inlet_duct.MN')
-
     prob.model.connect('fan:PRdes', 'DESIGN.fan.map.PRdes')
     prob.model.connect('fan:effDes', 'DESIGN.fan.map.effDes')
     prob.model.connect('fan:MN_out', 'DESIGN.fan.MN')
@@ -323,14 +334,14 @@ if __name__ == "__main__":
     prob.model.connect('splitter:MN_out1', 'DESIGN.splitter.MN1')
     prob.model.connect('splitter:MN_out2', 'DESIGN.splitter.MN2')
 
-    prob.model.connect('splitter_core_duct:dPqP', 'DESIGN.splitter_core_duct.dPqP')
-    prob.model.connect('splitter_core_duct:MN_out', 'DESIGN.splitter_core_duct.MN')
+    prob.model.connect('ic_duct:dPqP', 'DESIGN.ic_duct.dPqP')
+    prob.model.connect('ic_duct:MN_out', 'DESIGN.ic_duct.MN')
 
     prob.model.connect('hpc:PRdes', 'DESIGN.hpc.map.PRdes')
     prob.model.connect('hpc:effDes', 'DESIGN.hpc.map.effDes')
     prob.model.connect('hpc:MN_out', 'DESIGN.hpc.MN')
 
-    prob.model.connect('bld3:MN_out', 'DESIGN.bld3.MN')
+    prob.model.connect('bleed_3:MN_out', 'DESIGN.bleed_3.MN')
 
     prob.model.connect('burner:dPqP', 'DESIGN.burner.dPqP')
     prob.model.connect('burner:MN_out', 'DESIGN.burner.MN')
@@ -338,25 +349,19 @@ if __name__ == "__main__":
     prob.model.connect('hpt:effDes', 'DESIGN.hpt.map.effDes')
     prob.model.connect('hpt:MN_out', 'DESIGN.hpt.MN')
 
-    prob.model.connect('hpt_duct:dPqP', 'DESIGN.hpt_duct.dPqP')
-    prob.model.connect('hpt_duct:MN_out', 'DESIGN.hpt_duct.MN')
+    prob.model.connect('it_duct:dPqP', 'DESIGN.it_duct.dPqP')
+    prob.model.connect('it_duct:MN_out', 'DESIGN.it_duct.MN')
 
     prob.model.connect('lpt:effDes', 'DESIGN.lpt.map.effDes')
     prob.model.connect('lpt:MN_out', 'DESIGN.lpt.MN')
 
-    prob.model.connect('lpt_duct:dPqP', 'DESIGN.lpt_duct.dPqP')
-    prob.model.connect('lpt_duct:MN_out', 'DESIGN.lpt_duct.MN')
-
     prob.model.connect('bypass_duct:dPqP', 'DESIGN.bypass_duct.dPqP')
     prob.model.connect('bypass_duct:MN_out', 'DESIGN.bypass_duct.MN')
 
-    prob.model.connect('mixer_duct:dPqP', 'DESIGN.mixer_duct.dPqP')
-    prob.model.connect('mixer_duct:MN_out', 'DESIGN.mixer_duct.MN')
+    prob.model.connect('augmentor:dPqP', 'DESIGN.augmentor.dPqP')
+    prob.model.connect('augmentor:MN_out', 'DESIGN.augmentor.MN')
 
-    prob.model.connect('afterburner:dPqP', 'DESIGN.afterburner.dPqP')
-    prob.model.connect('afterburner:MN_out', 'DESIGN.afterburner.MN')
-
-    prob.model.connect('mixed_nozz:Cfg', 'DESIGN.mixed_nozz.Cfg')
+    prob.model.connect('nozzle:Cfg', 'DESIGN.nozzle.Cfg')
 
     prob.model.connect('lp_shaft:Nmech', 'DESIGN.LP_Nmech')
     prob.model.connect('hp_shaft:Nmech', 'DESIGN.HP_Nmech')
@@ -366,17 +371,21 @@ if __name__ == "__main__":
     prob.model.connect('hpc:cool1:frac_P', 'DESIGN.hpc.cool1:frac_P')
     prob.model.connect('hpc:cool1:frac_work', 'DESIGN.hpc.cool1:frac_work')
 
-    prob.model.connect('bld3:cool3:frac_W', 'DESIGN.bld3.cool3:frac_W')
+    prob.model.connect('hpc:cool2:frac_W', 'DESIGN.hpc.cool2:frac_W')
+    prob.model.connect('hpc:cool2:frac_P', 'DESIGN.hpc.cool2:frac_P')
+    prob.model.connect('hpc:cool2:frac_work', 'DESIGN.hpc.cool2:frac_work')
 
-    prob.model.connect('hpt:cool3:frac_P', 'DESIGN.hpt.cool3:frac_P')
-    prob.model.connect('lpt:cool1:frac_P', 'DESIGN.lpt.cool1:frac_P')
+    prob.model.connect('bleed_3:cust_bleed:frac_W', 'DESIGN.bleed_3.cust_bleed:frac_W')
+
+    prob.model.connect('hpt:chargable:frac_P', 'DESIGN.hpt.chargable:frac_P')
+    prob.model.connect('hpt:non_chargable:frac_P', 'DESIGN.hpt.non_chargable:frac_P')
 
 
     ####################
     # OFF DESIGN CASES
     ####################
     od_pts = ['OD0',]
-    # od_pts = []
+    od_pts = []
 
     od_alts = [35000,]
     od_MNs = [0.8, ]
@@ -395,29 +404,26 @@ if __name__ == "__main__":
         prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
 
         prob.model.connect('inlet:ram_recovery', pt+'.inlet.ram_recovery')
-        prob.model.connect('mixed_nozz:Cfg', pt+'.mixed_nozz.Cfg')
+        prob.model.connect('nozzle:Cfg', pt+'.nozzle.Cfg')
         prob.model.connect('hp_shaft:HPX', pt+'.hp_shaft.HPX')
 
 
         # duct pressure losses
-        prob.model.connect('inlet_duct:dPqP', pt+'.inlet_duct.dPqP')
-        prob.model.connect('splitter_core_duct:dPqP', pt+'.splitter_core_duct.dPqP')
+        prob.model.connect('ic_duct:dPqP', pt+'.ic_duct.dPqP')
         prob.model.connect('bypass_duct:dPqP', pt+'.bypass_duct.dPqP')
-        prob.model.connect('hpt_duct:dPqP', pt+'.hpt_duct.dPqP')
-        prob.model.connect('lpt_duct:dPqP', pt+'.lpt_duct.dPqP')
-        prob.model.connect('mixer_duct:dPqP', pt+'.mixer_duct.dPqP')
+        prob.model.connect('it_duct:dPqP', pt+'.it_duct.dPqP')
 
         # burner pressure losses
         prob.model.connect('burner:dPqP', pt+'.burner.dPqP')
-        prob.model.connect('afterburner:dPqP', pt+'.afterburner.dPqP')
+        prob.model.connect('augmentor:dPqP', pt+'.augmentor.dPqP')
 
         # cooling flow fractions
         prob.model.connect('hpc:cool1:frac_W', pt+'.hpc.cool1:frac_W')
         prob.model.connect('hpc:cool1:frac_P', pt+'.hpc.cool1:frac_P')
         prob.model.connect('hpc:cool1:frac_work', pt+'.hpc.cool1:frac_work')
-        prob.model.connect('bld3:cool3:frac_W', pt+'.bld3.cool3:frac_W')
-        prob.model.connect('hpt:cool3:frac_P', pt+'.hpt.cool3:frac_P')
-        prob.model.connect('lpt:cool1:frac_P', pt+'.lpt.cool1:frac_P')
+        prob.model.connect('bleed_3:cust_bleed:frac_W', pt+'.bleed_3.cust_bleed:frac_W')
+        prob.model.connect('hpt:chargable:frac_P', pt+'.hpt.chargable:frac_P')
+        prob.model.connect('hpt:non_chargable:frac_P', pt+'.hpt.non_chargable:frac_P')
 
         # map scalars
         prob.model.connect('DESIGN.fan.s_PRdes', pt+'.fan.s_PRdes')
@@ -441,25 +447,23 @@ if __name__ == "__main__":
         prob.model.connect('DESIGN.lpt.s_NpDes', pt+'.lpt.s_NpDes')
 
         # flow areas
-        prob.model.connect('DESIGN.mixed_nozz.Throat:stat:area', pt+'.balance.rhs:W')
+        prob.model.connect('DESIGN.nozzle.Throat:stat:area', pt+'.balance.rhs:W')
 
         prob.model.connect('DESIGN.inlet.Fl_O:stat:area', pt+'.inlet.area')
         prob.model.connect('DESIGN.fan.Fl_O:stat:area', pt+'.fan.area')
         prob.model.connect('DESIGN.splitter.Fl_O1:stat:area', pt+'.splitter.area1')
         prob.model.connect('DESIGN.splitter.Fl_O2:stat:area', pt+'.splitter.area2')
-        prob.model.connect('DESIGN.splitter_core_duct.Fl_O:stat:area', pt+'.splitter_core_duct.area')
+        prob.model.connect('DESIGN.ic_duct.Fl_O:stat:area', pt+'.ic_duct.area')
         prob.model.connect('DESIGN.hpc.Fl_O:stat:area', pt+'.hpc.area')
-        prob.model.connect('DESIGN.bld3.Fl_O:stat:area', pt+'.bld3.area')
+        prob.model.connect('DESIGN.bleed_3.Fl_O:stat:area', pt+'.bleed_3.area')
         prob.model.connect('DESIGN.burner.Fl_O:stat:area', pt+'.burner.area')
         prob.model.connect('DESIGN.hpt.Fl_O:stat:area', pt+'.hpt.area')
-        prob.model.connect('DESIGN.hpt_duct.Fl_O:stat:area', pt+'.hpt_duct.area')
+        prob.model.connect('DESIGN.it_duct.Fl_O:stat:area', pt+'.it_duct.area')
         prob.model.connect('DESIGN.lpt.Fl_O:stat:area', pt+'.lpt.area')
-        prob.model.connect('DESIGN.lpt_duct.Fl_O:stat:area', pt+'.lpt_duct.area')
         prob.model.connect('DESIGN.bypass_duct.Fl_O:stat:area', pt+'.bypass_duct.area')
         prob.model.connect('DESIGN.mixer.Fl_O:stat:area', pt+'.mixer.area')
         prob.model.connect('DESIGN.mixer.Fl_I1_calc:stat:area', pt+'.mixer.Fl_I1_stat_calc.area')
-        prob.model.connect('DESIGN.mixer_duct.Fl_O:stat:area', pt+'.mixer_duct.area')
-        prob.model.connect('DESIGN.afterburner.Fl_O:stat:area', pt+'.afterburner.area')
+        prob.model.connect('DESIGN.augmentor.Fl_O:stat:area', pt+'.augmentor.area')
 
 
     # setup problem
@@ -470,8 +474,8 @@ if __name__ == "__main__":
     prob['DESIGN.balance.FAR_ab'] = 0.025
     prob['DESIGN.balance.BPR'] = 1.0
     prob['DESIGN.balance.W'] = 100.
-    prob['DESIGN.balance.lpt_PR'] = 3.5
-    prob['DESIGN.balance.hpt_PR'] = 2.5
+    prob['DESIGN.balance.lpt_PR'] = 4.
+    prob['DESIGN.balance.hpt_PR'] = 3.5
     prob['DESIGN.fc.balance.Pt'] = 5.2
     prob['DESIGN.fc.balance.Tt'] = 440.0
     prob['DESIGN.mixer.balance.P_tot']=100
@@ -493,6 +497,7 @@ if __name__ == "__main__":
 
     st = time.time()
 
+    # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 0
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
@@ -502,14 +507,14 @@ if __name__ == "__main__":
     exit()
 
     def page_viewer(point):
-        flow_stations = ['fc.Fl_O', 'inlet.Fl_O', 'inlet_duct.Fl_O', 'fan.Fl_O', 'bypass_duct.Fl_O',
-                         'splitter.Fl_O2', 'splitter.Fl_O1', 'splitter_core_duct.Fl_O',
-                         'hpc.Fl_O', 'bld3.Fl_O', 'burner.Fl_O',
-                         'hpt.Fl_O', 'hpt_duct.Fl_O', 'lpt_duct.Fl_O',
-                         'mixer.Fl_O', 'mixer_duct.Fl_O', 'afterburner.Fl_O', 'mixed_nozz.Fl_O']
+        flow_stations = ['fc.Fl_O', 'inlet.Fl_O', 'fan.Fl_O', 'bypass_duct.Fl_O',
+                         'splitter.Fl_O2', 'splitter.Fl_O1', 'ic_duct.Fl_O',
+                         'hpc.Fl_O', 'bleed_3.Fl_O', 'burner.Fl_O',
+                         'hpt.Fl_O', 'it_duct.Fl_O', 'lpt_duct.Fl_O',
+                         'mixer.Fl_O', 'mixer_duct.Fl_O', 'augmentor.Fl_O', 'nozzle.Fl_O']
 
         compressors = ['fan', 'hpc']
-        burners = ['burner', 'afterburner']
+        burners = ['burner', 'augmentor']
         turbines = ['hpt', 'lpt']
         shafts = ['hp_shaft', 'lp_shaft']
 
@@ -521,9 +526,9 @@ if __name__ == "__main__":
         print_compressor(prob,[point+ "." + c for c in compressors])
         print_burner(prob,[point+ "." + b for b in burners])
         print_turbine(prob,[point+ "." + turb for turb in turbines])
-        print_nozzle(prob, [point + '.mixed_nozz'])
+        print_nozzle(prob, [point + '.nozzle'])
         print_shaft(prob, [point+ "." + s for s in shafts])
-        print_bleed(prob, [point+'.hpc.cool1', point+'.bld3.cool3'])
+        print_bleed(prob, [point+'.hpc.cool1', point+'.bleed_3.cool3'])
 
     page_viewer('DESIGN')
     page_viewer('OD0')
