@@ -3,7 +3,7 @@ from __future__ import print_function
 import sys
 import numpy as np
 
-from openmdao.api import ImplicitComponent, Group, IndepVarComp, BalanceComp, DirectSolver, BoundsEnforceLS, NewtonSolver
+from openmdao.api import ImplicitComponent, Group, IndepVarComp, BalanceComp, DirectSolver, BoundsEnforceLS, NewtonSolver, ArmijoGoldsteinLS
 from openmdao.core.component import Component
 
 from pycycle.constants import AIR_MIX, AIR_FUEL_MIX
@@ -170,39 +170,43 @@ class MixedFlowTurbofan(Group):
             self.connect('balance.FAR_ab', 'augmentor.Fl_I:FAR')
             self.connect('augmentor.Fl_O:tot:T', 'balance.lhs:FAR_ab')
 
-            balance.add_balance('lpt_PR', val=1.5, lower=1.001, upper=8, eq_units='hp', rhs_val=0., res_ref=1)
+            balance.add_balance('lpt_PR', val=1.5, lower=1.001, upper=8, eq_units='hp', use_mult=True, mult_val=-1)
             self.connect('balance.lpt_PR', 'lpt.PR')
-            self.connect('lp_shaft.pwr_net', 'balance.lhs:lpt_PR')
+            self.connect('lp_shaft.pwr_in', 'balance.lhs:lpt_PR')
+            self.connect('lp_shaft.pwr_out', 'balance.rhs:lpt_PR')
 
-            balance.add_balance('hpt_PR', val=1.5, lower=1.001, upper=8, eq_units='hp', rhs_val=0., res_ref=1)
+            balance.add_balance('hpt_PR', val=1.5, lower=1.001, upper=8, eq_units='hp', use_mult=True, mult_val=-1)
             self.connect('balance.hpt_PR', 'hpt.PR')
-            self.connect('hp_shaft.pwr_net', 'balance.lhs:hpt_PR')
+            self.connect('hp_shaft.pwr_in', 'balance.lhs:hpt_PR')
+            self.connect('hp_shaft.pwr_out', 'balance.rhs:hpt_PR')
 
         else: # off design
-            balance.add_balance('W', lower=1e-3, upper=200., units='lbm/s', eq_units='inch**2')
+            balance.add_balance('W', lower=1e-3, upper=400., units='lbm/s', eq_units='inch**2')
             self.connect('balance.W', 'fc.fs.W')
             self.connect('nozzle.Throat:stat:area', 'balance.lhs:W')
 
-            balance.add_balance('BPR', lower=0.25, upper=5.0, eq_units='psi')
+            balance.add_balance('BPR', lower=0.25, upper=3.0, eq_units='psi')
             self.connect('balance.BPR', 'splitter.BPR')
             self.connect('mixer.Fl_I1_calc:stat:P', 'balance.lhs:BPR')
             self.connect('bypass_duct.Fl_O:stat:P', 'balance.rhs:BPR')
 
-            balance.add_balance('FAR_core', eq_units='degR', lower=1e-4, upper=.06, val=.017)
+            balance.add_balance('FAR_core', eq_units='degR', lower=1e-4, upper=.045, val=.017)
             self.connect('balance.FAR_core', 'burner.Fl_I:FAR')
             self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR_core')
 
-            balance.add_balance('FAR_ab', eq_units='degR', lower=1e-4, upper=.06, val=.017)
+            balance.add_balance('FAR_ab', eq_units='degR', lower=1e-4, upper=.045, val=.017)
             self.connect('balance.FAR_ab', 'augmentor.Fl_I:FAR')
             self.connect('augmentor.Fl_O:tot:T', 'balance.lhs:FAR_ab')
 
-            balance.add_balance('lp_Nmech', val=1000., units='rpm', lower=500., eq_units='hp', rhs_val=0., res_ref=1e3)
-            self.connect('balance.lp_Nmech', 'LP_Nmech')
-            self.connect('lp_shaft.pwr_net', 'balance.lhs:lp_Nmech')
+            balance.add_balance('LP_Nmech', val=1., units='rpm', lower=0.5, upper=2., eq_units='hp', use_mult=True, mult_val=-1)
+            self.connect('balance.LP_Nmech', 'LP_Nmech')
+            self.connect('lp_shaft.pwr_in', 'balance.lhs:LP_Nmech')
+            self.connect('lp_shaft.pwr_out', 'balance.rhs:LP_Nmech')
 
-            balance.add_balance('hp_Nmech', val=1000., units='rpm', lower=500., eq_units='hp', rhs_val=0., res_ref=1e3)
-            self.connect('balance.hp_Nmech', 'HP_Nmech')
-            self.connect('hp_shaft.pwr_net', 'balance.lhs:hp_Nmech')
+            balance.add_balance('HP_Nmech', val=1., units='rpm', lower=0.5, upper=2., eq_units='hp', use_mult=True, mult_val=-1)
+            self.connect('balance.HP_Nmech', 'HP_Nmech')
+            self.connect('hp_shaft.pwr_in', 'balance.lhs:HP_Nmech')
+            self.connect('hp_shaft.pwr_out', 'balance.rhs:HP_Nmech')
 
         newton = self.nonlinear_solver = NewtonSolver()
         newton.options['atol'] = 1e-6
@@ -213,16 +217,24 @@ class MixedFlowTurbofan(Group):
         newton.options['max_sub_solves'] = 100
         newton.linesearch = BoundsEnforceLS()
         newton.linesearch.options['bound_enforcement'] = 'scalar'
+        # newton.linesearch.options['print_bound_enforce'] = True
         newton.linesearch.options['iprint'] = -1
+
+        # newton.linesearch = ArmijoGoldsteinLS()
+        # newton.linesearch.options['c'] = -.1
 
         self.linear_solver = DirectSolver(assemble_jac=True)
 
 def print_perf(prob,ptName):
     ''' print out the performancs values'''
-    print('BPR',prob[ptName+'.balance.BPR'])
-    print('W',prob[ptName+'.balance.W'])
-    #print('W',prob[ptName+'.wDV.wDes'])
-    print('Fnet uninst.',prob[ptName+'.perf.Fn'])
+    tmpl = 'BPR: {:5.3f}   W: {:5.3f}    Fnet: {:5.3f}    TSFC: {:5.3f}'
+    data = [prob[ptName+'.balance.BPR'][0],
+            prob[ptName+'.balance.W'][0],
+            prob[ptName+'.perf.Fn'][0],
+            prob[ptName+'.perf.TSFC'][0]]
+
+    print(tmpl.format(*data))
+    print()
 
 
 if __name__ == "__main__":
@@ -237,11 +249,11 @@ if __name__ == "__main__":
     ##########################################
     #  Design Variables
     ##########################################
-    des_vars.add_output('alt', 35000., units='ft') #DV
-    des_vars.add_output('MN', 0.8) #DV
+    des_vars.add_output('alt', 0., units='ft') #DV
+    des_vars.add_output('MN', 0.001) #DV
     des_vars.add_output('T4max', 3200, units='degR')
     des_vars.add_output('T4maxab', 3400, units='degR')
-    des_vars.add_output('Fn_des', 5500.0, units='lbf')
+    des_vars.add_output('Fn_des', 17000., units='lbf')
     des_vars.add_output('Mix_ER', 1.05 ,units=None) # defined as 1 over 2
     des_vars.add_output('fan:PRdes', 3.3) #ADV
     des_vars.add_output('hpc:PRdes', 9.3)
@@ -293,9 +305,10 @@ if __name__ == "__main__":
 
     element_params.add_output('nozzle:Cfg', 0.9933)
 
-    element_params.add_output('lp_shaft:Nmech', 4666.1, units='rpm')
-    element_params.add_output('hp_shaft:Nmech', 14705.7, units='rpm')
-    element_params.add_output('hp_shaft:HPX', 250.0, units='hp')
+    element_params.add_output('lp_shaft:Nmech', 1, units='rpm')
+    element_params.add_output('hp_shaft:Nmech', 1, units='rpm')
+    # element_params.add_output('hp_shaft:HPX', 250.0, units='hp')
+    element_params.add_output('hp_shaft:HPX', 0.0, units='hp')
 
     element_params.add_output('hpc:cool1:frac_W', 0.09)
     element_params.add_output('hpc:cool1:frac_P', 1.0)
@@ -385,10 +398,10 @@ if __name__ == "__main__":
     # OFF DESIGN CASES
     ####################
     od_pts = ['OD0',]
-    od_pts = []
+    # od_pts = []
 
-    od_alts = [35000,]
-    od_MNs = [0.8, ]
+    od_alts = [0,]
+    od_MNs = [0.001, ]
 
     des_vars.add_output('OD:alts', val=od_alts, units='ft')
     des_vars.add_output('OD:MNs', val=od_MNs)
@@ -421,6 +434,11 @@ if __name__ == "__main__":
         prob.model.connect('hpc:cool1:frac_W', pt+'.hpc.cool1:frac_W')
         prob.model.connect('hpc:cool1:frac_P', pt+'.hpc.cool1:frac_P')
         prob.model.connect('hpc:cool1:frac_work', pt+'.hpc.cool1:frac_work')
+
+        prob.model.connect('hpc:cool2:frac_W', pt+'.hpc.cool2:frac_W')
+        prob.model.connect('hpc:cool2:frac_P', pt+'.hpc.cool2:frac_P')
+        prob.model.connect('hpc:cool2:frac_work', pt+'.hpc.cool2:frac_work')
+
         prob.model.connect('bleed_3:cust_bleed:frac_W', pt+'.bleed_3.cust_bleed:frac_W')
         prob.model.connect('hpt:chargable:frac_P', pt+'.hpt.chargable:frac_P')
         prob.model.connect('hpt:non_chargable:frac_P', pt+'.hpt.non_chargable:frac_P')
@@ -461,8 +479,10 @@ if __name__ == "__main__":
         prob.model.connect('DESIGN.it_duct.Fl_O:stat:area', pt+'.it_duct.area')
         prob.model.connect('DESIGN.lpt.Fl_O:stat:area', pt+'.lpt.area')
         prob.model.connect('DESIGN.bypass_duct.Fl_O:stat:area', pt+'.bypass_duct.area')
+
         prob.model.connect('DESIGN.mixer.Fl_O:stat:area', pt+'.mixer.area')
         prob.model.connect('DESIGN.mixer.Fl_I1_calc:stat:area', pt+'.mixer.Fl_I1_stat_calc.area')
+
         prob.model.connect('DESIGN.augmentor.Fl_O:stat:area', pt+'.augmentor.area')
 
 
@@ -470,57 +490,77 @@ if __name__ == "__main__":
     prob.setup(check=False)#True)
 
     # initial guesses
+    # prob['DESIGN.balance.FAR_core'] = 0.025
+    # prob['DESIGN.balance.FAR_ab'] = 0.025
+    # prob['DESIGN.balance.BPR'] = 2.
+    # prob['DESIGN.balance.W'] = 300.
+    # prob['DESIGN.balance.lpt_PR'] = 3.5
+    # prob['DESIGN.balance.hpt_PR'] = 2.5
+    # prob['DESIGN.fc.balance.Pt'] = 14.
+    # prob['DESIGN.fc.balance.Tt'] = 500.0
+    # prob['DESIGN.mixer.balance.P_tot']=50.
+
     prob['DESIGN.balance.FAR_core'] = 0.025
     prob['DESIGN.balance.FAR_ab'] = 0.025
-    prob['DESIGN.balance.BPR'] = 1.0
-    prob['DESIGN.balance.W'] = 100.
-    prob['DESIGN.balance.lpt_PR'] = 4.
-    prob['DESIGN.balance.hpt_PR'] = 3.5
-    prob['DESIGN.fc.balance.Pt'] = 5.2
-    prob['DESIGN.fc.balance.Tt'] = 440.0
-    prob['DESIGN.mixer.balance.P_tot']=100
+    prob['DESIGN.balance.BPR'] = 0.85
+    prob['DESIGN.balance.W'] = 150.
+    prob['DESIGN.balance.lpt_PR'] = 3.5
+    prob['DESIGN.balance.hpt_PR'] = 2.5
+    prob['DESIGN.fc.balance.Pt'] = 14.
+    prob['DESIGN.fc.balance.Tt'] = 500.0
+    prob['DESIGN.mixer.balance.P_tot']= 500.
 
     for pt in od_pts:
-        prob[pt+'.balance.FAR_core'] = 0.031
-        prob[pt+'.balance.FAR_ab'] = 0.038
-        prob[pt+'.balance.BPR'] = 2.2
-        prob[pt+'.balance.W'] = 60
-        prob[pt+'.balance.hp_Nmech'] = 14700
-        prob[pt+'.balance.lp_Nmech'] = 4866
-        prob[pt+'.fc.balance.Pt'] = 5.2
-        prob[pt+'.fc.balance.Tt'] = 440.0
-        prob[pt+'.mixer.balance.P_tot']=150
-        prob[pt+'.hpt.PR'] = 2.5
-        prob[pt+'.lpt.PR'] = 3.5
+        prob[pt+'.balance.FAR_core'] = 0.028
+        prob[pt+'.balance.FAR_ab'] = 0.034
+        prob[pt+'.balance.BPR'] = .9
+        prob[pt+'.balance.W'] = 157.225
+        prob[pt+'.balance.HP_Nmech'] = 1.
+        prob[pt+'.balance.LP_Nmech'] = 1.
+        prob[pt+'.fc.balance.Pt'] = 14.696
+        prob[pt+'.fc.balance.Tt'] = 518.67
+        prob[pt+'.mixer.balance.P_tot'] = 380.
+        prob[pt+'.hpt.PR'] = 3.439
+        prob[pt+'.lpt.PR'] = 2.438
         prob[pt+'.fan.map.RlineMap'] = 2.0
         prob[pt+'.hpc.map.RlineMap'] = 2.0
 
     st = time.time()
 
-    # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 0
+    # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 3
+    prob.model.OD0.nonlinear_solver.options['maxiter'] = 3
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
     prob.run_model()
 
-    prob.model.DESIGN.list_outputs(residuals=True, units=True, residuals_tol=1e-3)
-    exit()
+    # prob.model.DESIGN.list_outputs(residuals=True, units=True, residuals_tol=1e-3)
+    prob.model.OD0.list_outputs(residuals=True, units=True, residuals_tol=1e-4)
+    # prob.model.OD0.list_outputs(residuals=True, units=True)
+    # prob.model.OD0.mixer.list_outputs(residuals=True, units=True, residuals_tol=1e-3)
+    # prob.model.DESIGN.mixer.Fl_I1_stat_calc.list_inputs()
+    # prob.model.DESIGN.mixer.Fl_I1_stat_calc.list_outputs()
+    # print()
+    # prob.model.OD0.mixer.Fl_I1_stat_calc.list_inputs(print_arrays=True)
+    # prob.model.OD0.mixer.Fl_I1_stat_calc.list_outputs()
+    # exit()
 
     def page_viewer(point):
         flow_stations = ['fc.Fl_O', 'inlet.Fl_O', 'fan.Fl_O', 'bypass_duct.Fl_O',
                          'splitter.Fl_O2', 'splitter.Fl_O1', 'ic_duct.Fl_O',
-                         'hpc.Fl_O', 'bleed_3.Fl_O', 'burner.Fl_O',
-                         'hpt.Fl_O', 'it_duct.Fl_O', 'lpt_duct.Fl_O',
-                         'mixer.Fl_O', 'mixer_duct.Fl_O', 'augmentor.Fl_O', 'nozzle.Fl_O']
+                         'hpc.Fl_O', 'bleed_3.Fl_O', 'burner.Fl_O', 'hpt.Fl_O',
+                         'it_duct.Fl_O', 'lpt.Fl_O', 'mixer.Fl_O', 'augmentor.Fl_O', 'nozzle.Fl_O']
 
         compressors = ['fan', 'hpc']
         burners = ['burner', 'augmentor']
         turbines = ['hpt', 'lpt']
         shafts = ['hp_shaft', 'lp_shaft']
 
-        print('*'*80)
+        print('*'*100)
         print('* ' + ' '*10 + point)
-        print('*'*80)
+        print('*'*100)
+
+        print_perf(prob, point)
 
         print_flow_station(prob,[point+ "."+fl for fl in flow_stations])
         print_compressor(prob,[point+ "." + c for c in compressors])
@@ -528,9 +568,10 @@ if __name__ == "__main__":
         print_turbine(prob,[point+ "." + turb for turb in turbines])
         print_nozzle(prob, [point + '.nozzle'])
         print_shaft(prob, [point+ "." + s for s in shafts])
-        print_bleed(prob, [point+'.hpc.cool1', point+'.bleed_3.cool3'])
+        print_bleed(prob, [point+'.hpc.cool1', point+'.hpc.cool2', point+'.bleed_3.cust_bleed'])
 
     page_viewer('DESIGN')
+    print(3*"\n")
     page_viewer('OD0')
     print()
     print("time", time.time() - st)
