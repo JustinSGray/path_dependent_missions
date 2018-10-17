@@ -41,7 +41,7 @@ prob.model.connect('hpc:PRdes', 'DESIGN.hpc.map.PRdes')
 # OFF DESIGN CASES
 ####################
 od_pts = ['OD_DES_CHECK','OD0', 'OD1']
-# od_pts = []
+od_pts = []
 
 od_alts = [0,     0,   20000]
 od_MNs =  [0.001, 0.5, 0.5]
@@ -91,7 +91,7 @@ for pt in od_pts:
     prob[pt+'.hpc.map.RlineMap'] = 2.0
 
 
-prob['OD1.balance.W'] = 80
+# prob['OD1.balance.W'] = 80
 
 
 # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 3
@@ -101,7 +101,8 @@ prob.set_solver_print(level=2, depth=1)
 
 prob.run_model()
 
-# prob.model.OD1.list_outputs(residuals=True, units=True, residuals_tol=1e-3)
+# prob.model.DESIGN.mixer.list_outputs(residuals=True, units=True, residuals_tol=1e-3, prom_name=True)
+# prob.model.DESIGN.mixer.list_outputs(residuals=True, units=True, prom_name=True)
 # prob.model.DESIGN.fc.list_inputs()
 
 

@@ -12,7 +12,7 @@ from pycycle.connect_flow import connect_flow
 from pycycle.cea import species_data
 from pycycle.elements.api import FlightConditions, Inlet, Compressor, Combustor, Turbine, Nozzle, Shaft, Duct, Performance,Splitter, Mixer, BleedOut
 from pycycle.viewers import print_flow_station, print_compressor, print_turbine, \
-                            print_nozzle, print_bleed, print_shaft, print_burner
+                            print_nozzle, print_bleed, print_shaft, print_burner, print_mixer
 from pycycle.maps.axi5 import AXI5
 from pycycle.maps.lpt2269 import LPT2269
 # from pycycle.maps.CFM56_Fan_map import FanMap
@@ -365,6 +365,7 @@ def page_viewer(prob,point):
         print_compressor(prob,[point+ "." + c for c in compressors])
         print_burner(prob,[point+ "." + b for b in burners])
         print_turbine(prob,[point+ "." + turb for turb in turbines])
+        print_mixer(prob, [point+'.'+'mixer'])
         print_nozzle(prob, [point + '.nozzle'])
         print_shaft(prob, [point+ "." + s for s in shafts])
         print_bleed(prob, [point+'.hpc.cool1', point+'.hpc.cool2', point+'.bleed_3.cust_bleed'])
