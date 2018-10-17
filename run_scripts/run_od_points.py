@@ -73,7 +73,7 @@ prob['DESIGN.balance.lpt_PR'] = 3.5
 prob['DESIGN.balance.hpt_PR'] = 2.5
 prob['DESIGN.fc.balance.Pt'] = 14.
 prob['DESIGN.fc.balance.Tt'] = 500.0
-prob['DESIGN.mixer.balance.P_tot']= 500.
+prob['DESIGN.mixer.balance.P_tot']= 72.
 
 for pt in od_pts:
     prob[pt+'.balance.FAR_core'] = 0.028
@@ -84,7 +84,7 @@ for pt in od_pts:
     prob[pt+'.balance.LP_Nmech'] = 1.
     prob[pt+'.fc.balance.Pt'] = 14.696
     prob[pt+'.fc.balance.Tt'] = 518.67
-    prob[pt+'.mixer.balance.P_tot'] = 500. # 380.
+    prob[pt+'.mixer.balance.P_tot'] = 72. # 380.
     prob[pt+'.hpt.PR'] = 3.439
     prob[pt+'.lpt.PR'] = 2.438
     prob[pt+'.fan.map.RlineMap'] = 2.0
