@@ -225,6 +225,111 @@ class MixedFlowTurbofan(Group):
 
         self.linear_solver = DirectSolver(assemble_jac=True)
 
+        # TODO: re-factor pycycle so this block isn't needed in default use case!!!
+        if design:
+            ##########################################
+            #  Model Parameters
+            ##########################################
+            element_params = self.add_subsystem('element_params', IndepVarComp(), promotes=["*"])
+            element_params.add_output('inlet:ram_recovery', 0.9990)
+            element_params.add_output('inlet:MN_out', 0.65)
+            self.connect('inlet:ram_recovery', 'inlet.ram_recovery')
+            self.connect('inlet:MN_out', 'inlet.MN')
+
+            element_params.add_output('fan:effDes', 0.8700)
+            element_params.add_output('fan:MN_out', 0.4578)
+            self.connect('fan:effDes', 'fan.map.effDes')
+            self.connect('fan:MN_out', 'fan.MN')
+
+            element_params.add_output('splitter:MN_out1', 0.3104)
+            element_params.add_output('splitter:MN_out2', 0.4518)
+            self.connect('splitter:MN_out1', 'splitter.MN1')
+            self.connect('splitter:MN_out2', 'splitter.MN2')
+
+            element_params.add_output('ic_duct:dPqP', 0.0048)
+            element_params.add_output('ic_duct:MN_out', 0.3121)
+            self.connect('ic_duct:dPqP', 'ic_duct.dPqP')
+            self.connect('ic_duct:MN_out', 'ic_duct.MN')
+
+            element_params.add_output('hpc:effDes', 0.8707)
+            element_params.add_output('hpc:MN_out', 0.2442)
+            self.connect('hpc:effDes', 'hpc.map.effDes')
+            self.connect('hpc:MN_out', 'hpc.MN')
+
+            element_params.add_output('hpc:cool1:frac_W', 0.09)
+            element_params.add_output('hpc:cool1:frac_P', 1.0)
+            element_params.add_output('hpc:cool1:frac_work', 1.0)
+            self.connect('hpc:cool1:frac_W', 'hpc.cool1:frac_W')
+            self.connect('hpc:cool1:frac_P', 'hpc.cool1:frac_P')
+            self.connect('hpc:cool1:frac_work', 'hpc.cool1:frac_work')
+
+            element_params.add_output('hpc:cool2:frac_W', 0.07)
+            element_params.add_output('hpc:cool2:frac_P', 0.5)
+            element_params.add_output('hpc:cool2:frac_work', 0.5)
+            self.connect('hpc:cool2:frac_W', 'hpc.cool2:frac_W')
+            self.connect('hpc:cool2:frac_P', 'hpc.cool2:frac_P')
+            self.connect('hpc:cool2:frac_work', 'hpc.cool2:frac_work')
+
+            element_params.add_output('duct_3:dPqP', 0.0048)
+            element_params.add_output('duct_3:MN_out', 0.2)
+            self.connect('duct_3:dPqP', 'duct_3.dPqP')
+            self.connect('duct_3:MN_out', 'duct_3.MN')
+
+            element_params.add_output('bleed_3:MN_out', 0.3000)
+            element_params.add_output('bleed_3:cust_bleed:frac_W', 0.07)
+            self.connect('bleed_3:MN_out', 'bleed_3.MN')
+            self.connect('bleed_3:cust_bleed:frac_W', 'bleed_3.cust_bleed:frac_W')
+
+            element_params.add_output('burner:dPqP', 0.0540)
+            element_params.add_output('burner:MN_out', 0.1025)
+            self.connect('burner:dPqP', 'burner.dPqP')
+            self.connect('burner:MN_out', 'burner.MN')
+
+            element_params.add_output('hpt:effDes', 0.8888)
+            element_params.add_output('hpt:MN_out', 0.3650)
+            element_params.add_output('hpt:chargable:frac_P', 0.0)
+            element_params.add_output('hpt:non_chargable:frac_P', 1.0)
+            self.connect('hpt:effDes', 'hpt.map.effDes')
+            self.connect('hpt:MN_out', 'hpt.MN')
+            self.connect('hpt:chargable:frac_P', 'hpt.chargable:frac_P')
+            self.connect('hpt:non_chargable:frac_P', 'hpt.non_chargable:frac_P')
+
+            element_params.add_output('it_duct:dPqP', 0.0051)
+            element_params.add_output('it_duct:MN_out', 0.3063)
+            self.connect('it_duct:dPqP', 'it_duct.dPqP')
+            self.connect('it_duct:MN_out', 'it_duct.MN')
+
+            element_params.add_output('lpt:effDes', 0.8996)
+            element_params.add_output('lpt:MN_out', 0.4127)
+            self.connect('lpt:effDes', 'lpt.map.effDes')
+            self.connect('lpt:MN_out', 'lpt.MN')
+
+            element_params.add_output('bypass_duct:dPqP', 0.0107)
+            element_params.add_output('bypass_duct:MN_out', 0.4463)
+            self.connect('bypass_duct:dPqP', 'bypass_duct.dPqP')
+            self.connect('bypass_duct:MN_out', 'bypass_duct.MN')
+
+            # No params for mixer
+
+            element_params.add_output('augmentor:dPqP', 0.0540)
+            element_params.add_output('augmentor:MN_out', 0.1025)
+            self.connect('augmentor:dPqP', 'augmentor.dPqP')
+            self.connect('augmentor:MN_out', 'augmentor.MN')
+
+            element_params.add_output('nozzle:Cfg', 0.9933)
+            self.connect('nozzle:Cfg', 'nozzle.Cfg')
+
+            element_params.add_output('lp_shaft:Nmech', 1, units='rpm')
+            element_params.add_output('hp_shaft:Nmech', 1, units='rpm')
+            element_params.add_output('hp_shaft:HPX', 250.0, units='hp')
+            self.connect('lp_shaft:Nmech', 'LP_Nmech')
+            self.connect('hp_shaft:Nmech', 'HP_Nmech')
+            self.connect('hp_shaft:HPX', 'hp_shaft.HPX')
+
+
+
+
+
 def print_perf(prob,ptName):
     ''' print out the performancs values'''
     tmpl = 'BPR: {:5.3f}   W: {:5.3f}    Fnet: {:5.3f}    TSFC: {:5.3f}'
@@ -237,211 +342,68 @@ def print_perf(prob,ptName):
     print()
 
 
-if __name__ == "__main__":
+def page_viewer(prob,point):
+        flow_stations = ['fc.Fl_O', 'inlet.Fl_O', 'fan.Fl_O', 'bypass_duct.Fl_O',
+                         'splitter.Fl_O2', 'splitter.Fl_O1', 'ic_duct.Fl_O',
+                         'hpc.Fl_O', 'duct_3.Fl_O', 'bleed_3.Fl_O', 'burner.Fl_O', 'hpt.Fl_O',
+                         'it_duct.Fl_O', 'lpt.Fl_O', 'mixer.Fl_O', 'augmentor.Fl_O', 'nozzle.Fl_O']
 
-    import time
-    from openmdao.api import Problem
+        compressors = ['fan', 'hpc']
+        burners = ['burner', 'augmentor']
+        turbines = ['hpt', 'lpt']
+        shafts = ['hp_shaft', 'lp_shaft']
 
-    prob = Problem()
+        MN = prob[point+'.fc.conv.fs.exit_static.statics.ps_resid.MN'][0]
+        alt = prob[point+'.fc.ambient.readAtmTable.alt'][0]
+        print('*'*100)
+        print('* ' + ' '*10 + point + "   MN: {}    alt: {} ft".format(MN, alt))
+        print('*'*100)
 
-    des_vars = prob.model.add_subsystem('des_vars', IndepVarComp(), promotes=["*"])
+        print_perf(prob, point)
 
-    ##########################################
-    #  Design Variables
-    ##########################################
-    des_vars.add_output('alt', 0., units='ft') #DV
-    des_vars.add_output('MN', 0.001) #DV
-    des_vars.add_output('T4max', 3200, units='degR')
-    des_vars.add_output('T4maxab', 3400, units='degR')
-    des_vars.add_output('Fn_des', 17000., units='lbf')
-    des_vars.add_output('Mix_ER', 1.05 ,units=None) # defined as 1 over 2
-    des_vars.add_output('fan:PRdes', 3.3) #ADV
-    des_vars.add_output('hpc:PRdes', 9.3)
-
-
-    ##########################################
-    #  Model Parameters
-    ##########################################
-    element_params = prob.model.add_subsystem('element_params', IndepVarComp(), promotes=["*"])
-    element_params.add_output('inlet:ram_recovery', 0.9990)
-    element_params.add_output('inlet:MN_out', 0.751)
-
-    element_params.add_output('fan:effDes', 0.8700)
-    element_params.add_output('fan:MN_out', 0.4578)
-
-    element_params.add_output('splitter:MN_out1', 0.3104)
-    element_params.add_output('splitter:MN_out2', 0.4518)
-
-    element_params.add_output('ic_duct:dPqP', 0.0048)
-    element_params.add_output('ic_duct:MN_out', 0.3121)
-
-    element_params.add_output('hpc:effDes', 0.8707)
-    element_params.add_output('hpc:MN_out', 0.2442)
-
-    element_params.add_output('duct_3:dPqP', 0.0048)
-    element_params.add_output('duct_3:MN_out', 0.2)
-
-    element_params.add_output('bleed_3:MN_out', 0.3000)
-
-    element_params.add_output('burner:dPqP', 0.0540)
-    element_params.add_output('burner:MN_out', 0.1025)
-
-    element_params.add_output('hpt:effDes', 0.8888)
-    element_params.add_output('hpt:MN_out', 0.3650)
-
-    element_params.add_output('it_duct:dPqP', 0.0051)
-    element_params.add_output('it_duct:MN_out', 0.3063)
-
-    element_params.add_output('lpt:effDes', 0.8996)
-    element_params.add_output('lpt:MN_out', 0.4127)
-
-    element_params.add_output('bypass_duct:dPqP', 0.0107)
-    element_params.add_output('bypass_duct:MN_out', 0.4463)
-
-    # No params for mixer
-
-    element_params.add_output('augmentor:dPqP', 0.0540)
-    element_params.add_output('augmentor:MN_out', 0.1025)
-
-    element_params.add_output('nozzle:Cfg', 0.9933)
-
-    element_params.add_output('lp_shaft:Nmech', 1, units='rpm')
-    element_params.add_output('hp_shaft:Nmech', 1, units='rpm')
-    # element_params.add_output('hp_shaft:HPX', 250.0, units='hp')
-    element_params.add_output('hp_shaft:HPX', 0.0, units='hp')
-
-    element_params.add_output('hpc:cool1:frac_W', 0.09)
-    element_params.add_output('hpc:cool1:frac_P', 1.0)
-    element_params.add_output('hpc:cool1:frac_work', 1.0)
-
-    element_params.add_output('hpc:cool2:frac_W', 0.07)
-    element_params.add_output('hpc:cool2:frac_P', 0.5)
-    element_params.add_output('hpc:cool2:frac_work', 0.5)
-
-    element_params.add_output('bleed_3:cust_bleed:frac_W', 0.07)
-
-    element_params.add_output('hpt:chargable:frac_P', 0.0)
-    element_params.add_output('hpt:non_chargable:frac_P', 1.0)
-
-    #####################
-    # DESIGN CASE
-    #####################
-
-    prob.model.add_subsystem('DESIGN', MixedFlowTurbofan(design=True))
-
-    prob.model.connect('alt', 'DESIGN.fc.alt')
-    prob.model.connect('MN', 'DESIGN.fc.MN')
-    prob.model.connect('Fn_des', 'DESIGN.balance.rhs:W')
-    prob.model.connect('T4max', 'DESIGN.balance.rhs:FAR_core')
-    prob.model.connect('T4maxab', 'DESIGN.balance.rhs:FAR_ab')
-    prob.model.connect('Mix_ER', 'DESIGN.balance.rhs:BPR')
-
-    prob.model.connect('inlet:ram_recovery', 'DESIGN.inlet.ram_recovery')
-    prob.model.connect('inlet:MN_out', 'DESIGN.inlet.MN')
-
-    prob.model.connect('fan:PRdes', 'DESIGN.fan.map.PRdes')
-    prob.model.connect('fan:effDes', 'DESIGN.fan.map.effDes')
-    prob.model.connect('fan:MN_out', 'DESIGN.fan.MN')
-
-    #prob.model.connect('splitter:BPR', 'DESIGN.splitter.BPR')
-    prob.model.connect('splitter:MN_out1', 'DESIGN.splitter.MN1')
-    prob.model.connect('splitter:MN_out2', 'DESIGN.splitter.MN2')
-
-    prob.model.connect('ic_duct:dPqP', 'DESIGN.ic_duct.dPqP')
-    prob.model.connect('ic_duct:MN_out', 'DESIGN.ic_duct.MN')
-
-    prob.model.connect('hpc:PRdes', 'DESIGN.hpc.map.PRdes')
-    prob.model.connect('hpc:effDes', 'DESIGN.hpc.map.effDes')
-    prob.model.connect('hpc:MN_out', 'DESIGN.hpc.MN')
-
-    prob.model.connect('bleed_3:MN_out', 'DESIGN.bleed_3.MN')
-
-    prob.model.connect('burner:dPqP', 'DESIGN.burner.dPqP')
-    prob.model.connect('burner:MN_out', 'DESIGN.burner.MN')
-
-    prob.model.connect('hpt:effDes', 'DESIGN.hpt.map.effDes')
-    prob.model.connect('hpt:MN_out', 'DESIGN.hpt.MN')
-
-    prob.model.connect('it_duct:dPqP', 'DESIGN.it_duct.dPqP')
-    prob.model.connect('it_duct:MN_out', 'DESIGN.it_duct.MN')
-
-    prob.model.connect('lpt:effDes', 'DESIGN.lpt.map.effDes')
-    prob.model.connect('lpt:MN_out', 'DESIGN.lpt.MN')
-
-    prob.model.connect('bypass_duct:dPqP', 'DESIGN.bypass_duct.dPqP')
-    prob.model.connect('bypass_duct:MN_out', 'DESIGN.bypass_duct.MN')
-
-    prob.model.connect('augmentor:dPqP', 'DESIGN.augmentor.dPqP')
-    prob.model.connect('augmentor:MN_out', 'DESIGN.augmentor.MN')
-
-    prob.model.connect('nozzle:Cfg', 'DESIGN.nozzle.Cfg')
-
-    prob.model.connect('lp_shaft:Nmech', 'DESIGN.LP_Nmech')
-    prob.model.connect('hp_shaft:Nmech', 'DESIGN.HP_Nmech')
-    prob.model.connect('hp_shaft:HPX', 'DESIGN.hp_shaft.HPX')
-
-    prob.model.connect('hpc:cool1:frac_W', 'DESIGN.hpc.cool1:frac_W')
-    prob.model.connect('hpc:cool1:frac_P', 'DESIGN.hpc.cool1:frac_P')
-    prob.model.connect('hpc:cool1:frac_work', 'DESIGN.hpc.cool1:frac_work')
-
-    prob.model.connect('hpc:cool2:frac_W', 'DESIGN.hpc.cool2:frac_W')
-    prob.model.connect('hpc:cool2:frac_P', 'DESIGN.hpc.cool2:frac_P')
-    prob.model.connect('hpc:cool2:frac_work', 'DESIGN.hpc.cool2:frac_work')
-
-    prob.model.connect('bleed_3:cust_bleed:frac_W', 'DESIGN.bleed_3.cust_bleed:frac_W')
-
-    prob.model.connect('hpt:chargable:frac_P', 'DESIGN.hpt.chargable:frac_P')
-    prob.model.connect('hpt:non_chargable:frac_P', 'DESIGN.hpt.non_chargable:frac_P')
+        print_flow_station(prob,[point+ "."+fl for fl in flow_stations])
+        print_compressor(prob,[point+ "." + c for c in compressors])
+        print_burner(prob,[point+ "." + b for b in burners])
+        print_turbine(prob,[point+ "." + turb for turb in turbines])
+        print_nozzle(prob, [point + '.nozzle'])
+        print_shaft(prob, [point+ "." + s for s in shafts])
+        print_bleed(prob, [point+'.hpc.cool1', point+'.hpc.cool2', point+'.bleed_3.cust_bleed'])
 
 
-    ####################
-    # OFF DESIGN CASES
-    ####################
-    od_pts = ['OD0',]
-    # od_pts = []
+def connect_des_data(prob, des_pt_name, od_pt_names):
 
-    od_alts = [0,]
-    od_MNs = [0.001, ]
+    if isinstance(od_pt_names, str):
+        od_pt_names = [od_pt_names]
 
-    des_vars.add_output('OD:alts', val=od_alts, units='ft')
-    des_vars.add_output('OD:MNs', val=od_MNs)
+    for pt in od_pt_names:
 
-
-    for i,pt in enumerate(od_pts):
-        prob.model.add_subsystem(pt, MixedFlowTurbofan(design=False))
-
-        prob.model.connect('OD:alts', pt+'.fc.alt', src_indices=[i,])
-        prob.model.connect('OD:MNs', pt+'.fc.MN', src_indices=[i,])
-
-        prob.model.connect('T4max', pt+'.balance.rhs:FAR_core')
-        prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
-
-        prob.model.connect('inlet:ram_recovery', pt+'.inlet.ram_recovery')
-        prob.model.connect('nozzle:Cfg', pt+'.nozzle.Cfg')
-        prob.model.connect('hp_shaft:HPX', pt+'.hp_shaft.HPX')
+        prob.model.connect('DESIGN.inlet:ram_recovery', pt+'.inlet.ram_recovery')
+        prob.model.connect('DESIGN.nozzle:Cfg', pt+'.nozzle.Cfg')
+        prob.model.connect('DESIGN.hp_shaft:HPX', pt+'.hp_shaft.HPX')
 
 
         # duct pressure losses
-        prob.model.connect('ic_duct:dPqP', pt+'.ic_duct.dPqP')
-        prob.model.connect('bypass_duct:dPqP', pt+'.bypass_duct.dPqP')
-        prob.model.connect('it_duct:dPqP', pt+'.it_duct.dPqP')
+        prob.model.connect('DESIGN.ic_duct:dPqP', pt+'.ic_duct.dPqP')
+        prob.model.connect('DESIGN.duct_3:dPqP', pt+'.duct_3.dPqP')
+        prob.model.connect('DESIGN.it_duct:dPqP', pt+'.it_duct.dPqP')
+        prob.model.connect('DESIGN.bypass_duct:dPqP', pt+'.bypass_duct.dPqP')
 
         # burner pressure losses
-        prob.model.connect('burner:dPqP', pt+'.burner.dPqP')
-        prob.model.connect('augmentor:dPqP', pt+'.augmentor.dPqP')
+        prob.model.connect('DESIGN.burner:dPqP', pt+'.burner.dPqP')
+        prob.model.connect('DESIGN.augmentor:dPqP', pt+'.augmentor.dPqP')
 
         # cooling flow fractions
-        prob.model.connect('hpc:cool1:frac_W', pt+'.hpc.cool1:frac_W')
-        prob.model.connect('hpc:cool1:frac_P', pt+'.hpc.cool1:frac_P')
-        prob.model.connect('hpc:cool1:frac_work', pt+'.hpc.cool1:frac_work')
+        prob.model.connect('DESIGN.hpc:cool1:frac_W', pt+'.hpc.cool1:frac_W')
+        prob.model.connect('DESIGN.hpc:cool1:frac_P', pt+'.hpc.cool1:frac_P')
+        prob.model.connect('DESIGN.hpc:cool1:frac_work', pt+'.hpc.cool1:frac_work')
 
-        prob.model.connect('hpc:cool2:frac_W', pt+'.hpc.cool2:frac_W')
-        prob.model.connect('hpc:cool2:frac_P', pt+'.hpc.cool2:frac_P')
-        prob.model.connect('hpc:cool2:frac_work', pt+'.hpc.cool2:frac_work')
+        prob.model.connect('DESIGN.hpc:cool2:frac_W', pt+'.hpc.cool2:frac_W')
+        prob.model.connect('DESIGN.hpc:cool2:frac_P', pt+'.hpc.cool2:frac_P')
+        prob.model.connect('DESIGN.hpc:cool2:frac_work', pt+'.hpc.cool2:frac_work')
 
-        prob.model.connect('bleed_3:cust_bleed:frac_W', pt+'.bleed_3.cust_bleed:frac_W')
-        prob.model.connect('hpt:chargable:frac_P', pt+'.hpt.chargable:frac_P')
-        prob.model.connect('hpt:non_chargable:frac_P', pt+'.hpt.non_chargable:frac_P')
+        prob.model.connect('DESIGN.bleed_3:cust_bleed:frac_W', pt+'.bleed_3.cust_bleed:frac_W')
+        prob.model.connect('DESIGN.hpt:chargable:frac_P', pt+'.hpt.chargable:frac_P')
+        prob.model.connect('DESIGN.hpt:non_chargable:frac_P', pt+'.hpt.non_chargable:frac_P')
 
         # map scalars
         prob.model.connect('DESIGN.fan.s_PRdes', pt+'.fan.s_PRdes')
@@ -473,6 +435,7 @@ if __name__ == "__main__":
         prob.model.connect('DESIGN.splitter.Fl_O2:stat:area', pt+'.splitter.area2')
         prob.model.connect('DESIGN.ic_duct.Fl_O:stat:area', pt+'.ic_duct.area')
         prob.model.connect('DESIGN.hpc.Fl_O:stat:area', pt+'.hpc.area')
+        prob.model.connect('DESIGN.duct_3.Fl_O:stat:area', pt+'.duct_3.area')
         prob.model.connect('DESIGN.bleed_3.Fl_O:stat:area', pt+'.bleed_3.area')
         prob.model.connect('DESIGN.burner.Fl_O:stat:area', pt+'.burner.area')
         prob.model.connect('DESIGN.hpt.Fl_O:stat:area', pt+'.hpt.area')
@@ -486,20 +449,73 @@ if __name__ == "__main__":
         prob.model.connect('DESIGN.augmentor.Fl_O:stat:area', pt+'.augmentor.area')
 
 
+if __name__ == "__main__":
+
+    import time
+    from openmdao.api import Problem
+
+    prob = Problem()
+
+    des_vars = prob.model.add_subsystem('des_vars', IndepVarComp(), promotes=["*"])
+
+    ##########################################
+    #  Design Variables
+    ##########################################
+    des_vars.add_output('alt', 0., units='ft') #DV
+    des_vars.add_output('MN', 0.001) #DV
+    des_vars.add_output('T4max', 3200, units='degR')
+    des_vars.add_output('T4maxab', 3400, units='degR')
+    des_vars.add_output('Fn_des', 17000., units='lbf')
+    des_vars.add_output('Mix_ER', 1.05 ,units=None) # defined as 1 over 2
+    des_vars.add_output('fan:PRdes', 3.3) #ADV
+    des_vars.add_output('hpc:PRdes', 9.3)
+
+    #####################
+    # DESIGN CASE
+    #####################
+
+    prob.model.add_subsystem('DESIGN', MixedFlowTurbofan(design=True))
+
+    prob.model.connect('alt', 'DESIGN.fc.alt')
+    prob.model.connect('MN', 'DESIGN.fc.MN')
+    prob.model.connect('Fn_des', 'DESIGN.balance.rhs:W')
+    prob.model.connect('T4max', 'DESIGN.balance.rhs:FAR_core')
+    prob.model.connect('T4maxab', 'DESIGN.balance.rhs:FAR_ab')
+    prob.model.connect('Mix_ER', 'DESIGN.balance.rhs:BPR')
+
+    prob.model.connect('fan:PRdes', 'DESIGN.fan.map.PRdes')
+
+    prob.model.connect('hpc:PRdes', 'DESIGN.hpc.map.PRdes')
+
+
+    ####################
+    # OFF DESIGN CASES
+    ####################
+    od_pts = ['OD0',]
+    # od_pts = []
+
+    od_alts = [0,]
+    od_MNs = [0.001, ]
+
+    des_vars.add_output('OD:alts', val=od_alts, units='ft')
+    des_vars.add_output('OD:MNs', val=od_MNs)
+
+    connect_des_data(prob, 'DESIGN', od_pts)
+
+    for i,pt in enumerate(od_pts):
+        prob.model.add_subsystem(pt, MixedFlowTurbofan(design=False))
+
+        prob.model.connect('OD:alts', pt+'.fc.alt', src_indices=[i,])
+        prob.model.connect('OD:MNs', pt+'.fc.MN', src_indices=[i,])
+
+        prob.model.connect('T4max', pt+'.balance.rhs:FAR_core')
+        prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
+
+
     # setup problem
     prob.setup(check=False)#True)
 
     # initial guesses
-    # prob['DESIGN.balance.FAR_core'] = 0.025
-    # prob['DESIGN.balance.FAR_ab'] = 0.025
-    # prob['DESIGN.balance.BPR'] = 2.
-    # prob['DESIGN.balance.W'] = 300.
-    # prob['DESIGN.balance.lpt_PR'] = 3.5
-    # prob['DESIGN.balance.hpt_PR'] = 2.5
-    # prob['DESIGN.fc.balance.Pt'] = 14.
-    # prob['DESIGN.fc.balance.Tt'] = 500.0
-    # prob['DESIGN.mixer.balance.P_tot']=50.
-
     prob['DESIGN.balance.FAR_core'] = 0.025
     prob['DESIGN.balance.FAR_ab'] = 0.025
     prob['DESIGN.balance.BPR'] = 0.85
@@ -528,14 +544,14 @@ if __name__ == "__main__":
     st = time.time()
 
     # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 3
-    prob.model.OD0.nonlinear_solver.options['maxiter'] = 3
+    # prob.model.OD0.nonlinear_solver.options['maxiter'] = 3
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
     prob.run_model()
 
     # prob.model.DESIGN.list_outputs(residuals=True, units=True, residuals_tol=1e-3)
-    prob.model.OD0.list_outputs(residuals=True, units=True, residuals_tol=1e-4)
+    # prob.model.OD0.list_outputs(residuals=True, units=True, residuals_tol=1e-4)
     # prob.model.OD0.list_outputs(residuals=True, units=True)
     # prob.model.OD0.mixer.list_outputs(residuals=True, units=True, residuals_tol=1e-3)
     # prob.model.DESIGN.mixer.Fl_I1_stat_calc.list_inputs()
@@ -545,34 +561,11 @@ if __name__ == "__main__":
     # prob.model.OD0.mixer.Fl_I1_stat_calc.list_outputs()
     # exit()
 
-    def page_viewer(point):
-        flow_stations = ['fc.Fl_O', 'inlet.Fl_O', 'fan.Fl_O', 'bypass_duct.Fl_O',
-                         'splitter.Fl_O2', 'splitter.Fl_O1', 'ic_duct.Fl_O',
-                         'hpc.Fl_O', 'bleed_3.Fl_O', 'burner.Fl_O', 'hpt.Fl_O',
-                         'it_duct.Fl_O', 'lpt.Fl_O', 'mixer.Fl_O', 'augmentor.Fl_O', 'nozzle.Fl_O']
 
-        compressors = ['fan', 'hpc']
-        burners = ['burner', 'augmentor']
-        turbines = ['hpt', 'lpt']
-        shafts = ['hp_shaft', 'lp_shaft']
 
-        print('*'*100)
-        print('* ' + ' '*10 + point)
-        print('*'*100)
-
-        print_perf(prob, point)
-
-        print_flow_station(prob,[point+ "."+fl for fl in flow_stations])
-        print_compressor(prob,[point+ "." + c for c in compressors])
-        print_burner(prob,[point+ "." + b for b in burners])
-        print_turbine(prob,[point+ "." + turb for turb in turbines])
-        print_nozzle(prob, [point + '.nozzle'])
-        print_shaft(prob, [point+ "." + s for s in shafts])
-        print_bleed(prob, [point+'.hpc.cool1', point+'.hpc.cool2', point+'.bleed_3.cust_bleed'])
-
-    page_viewer('DESIGN')
+    page_viewer(prob, 'DESIGN')
     print(3*"\n")
-    page_viewer('OD0')
+    page_viewer(prob,'OD0')
     print()
     print("time", time.time() - st)
 
