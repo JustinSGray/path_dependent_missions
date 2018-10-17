@@ -41,7 +41,7 @@ prob.model.connect('hpc:PRdes', 'DESIGN.hpc.map.PRdes')
 # OFF DESIGN CASES
 ####################
 od_pts = ['OD_DES_CHECK','OD0', 'OD1']
-od_pts = []
+# od_pts = []
 
 od_alts = [0,     0,   20000]
 od_MNs =  [0.001, 0.5, 0.5]
@@ -90,8 +90,8 @@ for pt in od_pts:
     prob[pt+'.fan.map.RlineMap'] = 2.0
     prob[pt+'.hpc.map.RlineMap'] = 2.0
 
-
-# prob['OD1.balance.W'] = 80
+# model is very sensitive to mass flow guesses, and higher altitudes have less mass-flow
+prob['OD1.balance.W'] = 80
 
 
 # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 3

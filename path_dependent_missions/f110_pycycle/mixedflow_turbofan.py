@@ -23,6 +23,7 @@ from pycycle.maps.CFM56_LPT_map import LPTmap
 
 from path_dependent_missions.f110_pycycle.map_msfan3_3 import  FanMap
 from path_dependent_missions.f110_pycycle.map_hpc9_3 import  HPCmap
+from path_dependent_missions.f110_pycycle.mil_spec_recovery import MilSpecRecovery
 
 class MixedFlowTurbofan(Group):
 
@@ -40,6 +41,7 @@ class MixedFlowTurbofan(Group):
 
         self.add_subsystem('fc', FlightConditions(thermo_data=thermo_spec, elements=AIR_MIX))
         # Inlet Components
+        self.add_subsystem('mil_spec', MilSpecRecovery())
         self.add_subsystem('inlet', Inlet(design=design, thermo_data=thermo_spec, elements=AIR_MIX))
 
         # Fan Components - Split here for CFD integration Add a CFDStart Compomponent
@@ -132,6 +134,8 @@ class MixedFlowTurbofan(Group):
         #  Additional Connections
         ##########################################
         # Make additional model connections
+        self.connect('fc.Fl_O:stat:MN', 'mil_spec.MN')
+        self.connect('mil_spec.ram_recovery', 'inlet.ram_recovery')
         self.connect('inlet.Fl_O:tot:P', 'perf.Pt2')
         self.connect('hpc.Fl_O:tot:P', 'perf.Pt3')
         self.connect('burner.Wfuel', 'perf.Wfuel_0')
@@ -231,9 +235,9 @@ class MixedFlowTurbofan(Group):
             #  Model Parameters
             ##########################################
             element_params = self.add_subsystem('element_params', IndepVarComp(), promotes=["*"])
-            element_params.add_output('inlet:ram_recovery', 0.9990)
+            # element_params.add_output('inlet:ram_recovery', 0.9990)
             element_params.add_output('inlet:MN_out', 0.65)
-            self.connect('inlet:ram_recovery', 'inlet.ram_recovery')
+            # self.connect('inlet:ram_recovery', 'inlet.ram_recovery')
             self.connect('inlet:MN_out', 'inlet.MN')
 
             element_params.add_output('fan:effDes', 0.8700)
@@ -378,7 +382,7 @@ def connect_des_data(prob, des_pt_name, od_pt_names):
 
     for pt in od_pt_names:
 
-        prob.model.connect('DESIGN.inlet:ram_recovery', pt+'.inlet.ram_recovery')
+        # prob.model.connect('DESIGN.inlet:ram_recovery', pt+'.inlet.ram_recovery')
         prob.model.connect('DESIGN.nozzle:Cfg', pt+'.nozzle.Cfg')
         prob.model.connect('DESIGN.hp_shaft:HPX', pt+'.hp_shaft.HPX')
 
