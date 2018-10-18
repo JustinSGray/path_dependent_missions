@@ -24,6 +24,7 @@ from pycycle.maps.CFM56_LPT_map import LPTmap
 from path_dependent_missions.f110_pycycle.map_msfan3_3 import  FanMap
 from path_dependent_missions.f110_pycycle.map_hpc9_3 import  HPCmap
 from path_dependent_missions.f110_pycycle.mil_spec_recovery import MilSpecRecovery
+from path_dependent_missions.f110_pycycle.constrained_balance import ConstrainedTempBalance
 
 class MixedFlowTurbofan(Group):
 
@@ -194,13 +195,19 @@ class MixedFlowTurbofan(Group):
             self.connect('mixer.Fl_I1_calc:stat:P', 'balance.lhs:BPR')
             self.connect('bypass_duct.Fl_O:stat:P', 'balance.rhs:BPR')
 
-            balance.add_balance('FAR_core', eq_units='degR', lower=1e-4, upper=.045, val=.017)
-            self.connect('balance.FAR_core', 'burner.Fl_I:FAR')
-            self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR_core')
+            # balance.add_balance('FAR_core', eq_units='degR', lower=1e-4, upper=.045, val=.017)
+            # self.connect('balance.FAR_core', 'burner.Fl_I:FAR')
+            # self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR_core')
 
             balance.add_balance('FAR_ab', eq_units='degR', lower=1e-4, upper=.045, val=.017)
             self.connect('balance.FAR_ab', 'augmentor.Fl_I:FAR')
             self.connect('augmentor.Fl_O:tot:T', 'balance.lhs:FAR_ab')
+
+            far_core_bal = ConstrainedTempBalance()
+            self.add_subsystem('far_core_bal', far_core_bal)
+            self.connect('far_core_bal.FAR', 'burner.Fl_I:FAR')
+            self.connect('burner.Fl_O:tot:T', 'far_core_bal.T_computed')
+            self.connect('fan.map.shaftNc.NcMap', 'far_core_bal.Nc_computed')
 
             balance.add_balance('LP_Nmech', val=1., units='rpm', lower=0.5, upper=2., eq_units='hp', use_mult=True, mult_val=-1)
             self.connect('balance.LP_Nmech', 'LP_Nmech')
@@ -216,9 +223,9 @@ class MixedFlowTurbofan(Group):
         newton.options['atol'] = 1e-6
         newton.options['rtol'] = 1e-10
         newton.options['iprint'] = 2
-        newton.options['maxiter'] = 20
+        newton.options['maxiter'] = 30
         newton.options['solve_subsystems'] = True
-        newton.options['max_sub_solves'] = 100
+        newton.options['max_sub_solves'] = 10
         newton.linesearch = BoundsEnforceLS()
         newton.linesearch.options['bound_enforcement'] = 'scalar'
         # newton.linesearch.options['print_bound_enforce'] = True
@@ -386,7 +393,6 @@ def connect_des_data(prob, des_pt_name, od_pt_names):
         prob.model.connect('DESIGN.nozzle:Cfg', pt+'.nozzle.Cfg')
         prob.model.connect('DESIGN.hp_shaft:HPX', pt+'.hp_shaft.HPX')
 
-
         # duct pressure losses
         prob.model.connect('DESIGN.ic_duct:dPqP', pt+'.ic_duct.dPqP')
         prob.model.connect('DESIGN.duct_3:dPqP', pt+'.duct_3.dPqP')
@@ -513,7 +519,7 @@ if __name__ == "__main__":
         prob.model.connect('OD:alts', pt+'.fc.alt', src_indices=[i,])
         prob.model.connect('OD:MNs', pt+'.fc.MN', src_indices=[i,])
 
-        prob.model.connect('T4max', pt+'.balance.rhs:FAR_core')
+        prob.model.connect('T4max', pt+'.far_core_bal.T_requested')
         prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
 
 
@@ -532,7 +538,7 @@ if __name__ == "__main__":
     prob['DESIGN.mixer.balance.P_tot']= 72
 
     for pt in od_pts:
-        prob[pt+'.balance.FAR_core'] = 0.028
+        prob[pt+'.far_core_bal.FAR'] = 0.028
         prob[pt+'.balance.FAR_ab'] = 0.034
         prob[pt+'.balance.BPR'] = .9
         prob[pt+'.balance.W'] = 157.225

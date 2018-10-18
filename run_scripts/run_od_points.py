@@ -57,7 +57,7 @@ for i,pt in enumerate(od_pts):
     prob.model.connect('OD:alts', pt+'.fc.alt', src_indices=[i,])
     prob.model.connect('OD:MNs', pt+'.fc.MN', src_indices=[i,])
 
-    prob.model.connect('T4max', pt+'.balance.rhs:FAR_core')
+    prob.model.connect('T4max', pt+'.far_core_bal.T_requested')
     prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
 
 
@@ -76,7 +76,7 @@ prob['DESIGN.fc.balance.Tt'] = 500.0
 prob['DESIGN.mixer.balance.P_tot']= 72.
 
 for pt in od_pts:
-    prob[pt+'.balance.FAR_core'] = 0.028
+    prob[pt+'.far_core_bal.FAR'] = 0.028
     prob[pt+'.balance.FAR_ab'] = 0.034
     prob[pt+'.balance.BPR'] = .9
     prob[pt+'.balance.W'] = 157.225
