@@ -1,3 +1,5 @@
+import numpy as np
+
 from openmdao.api import Problem, IndepVarComp
 
 from path_dependent_missions.f110_pycycle import mixedflow_turbofan as mftf
@@ -40,14 +42,23 @@ prob.model.connect('hpc:PRdes', 'DESIGN.hpc.map.PRdes')
 ####################
 # OFF DESIGN CASES
 ####################
-od_pts = ['OD_DES_CHECK','OD0', 'OD1']
+od_pts = ['OD_DES_CHECK','OD0', 'OD1', 'OD2']
 # od_pts = []
 
-od_alts = [0,     0,   20000]
-od_MNs =  [0.001, 0.5, 0.5]
+od_alts = [0,     0,   20000, 20000]
+od_MNs =  [0.001, 0.5, 0.5, 0.5]
 
 des_vars.add_output('OD:alts', val=od_alts, units='ft')
 des_vars.add_output('OD:MNs', val=od_MNs)
+
+
+##########################################
+#  Control Variables
+##########################################]
+# Note: note sure what the range should be here, but probably around .8-1.2 ish is a good start
+des_vars.add_output('OD:vabi_fact', val=[1,1,1,.8])
+des_vars.add_output('OD:hpc_control', val=[0,0,0,90])
+des_vars.add_output('OD:fan_control', val=[0,0,0,90])
 
 mftf.connect_des_data(prob, 'DESIGN', od_pts)
 
@@ -56,6 +67,9 @@ for i,pt in enumerate(od_pts):
 
     prob.model.connect('OD:alts', pt+'.fc.alt', src_indices=[i,])
     prob.model.connect('OD:MNs', pt+'.fc.MN', src_indices=[i,])
+    prob.model.connect('OD:vabi_fact', pt+'.vabi.fact', src_indices=[i,])
+    prob.model.connect('OD:hpc_control', pt+'.hpc.map.alphaMap', src_indices=[i,])
+    prob.model.connect('OD:fan_control', pt+'.fan.map.alphaMap', src_indices=[i,])
 
     prob.model.connect('T4max', pt+'.far_core_bal.T_requested')
     prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
@@ -92,6 +106,7 @@ for pt in od_pts:
 
 # model is very sensitive to mass flow guesses, and higher altitudes have less mass-flow
 prob['OD1.balance.W'] = 80
+prob['OD2.balance.W'] = 80
 
 
 # prob.model.DESIGN.nonlinear_solver.options['maxiter'] = 3

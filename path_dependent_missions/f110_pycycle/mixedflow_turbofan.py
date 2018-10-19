@@ -3,7 +3,8 @@ from __future__ import print_function
 import sys
 import numpy as np
 
-from openmdao.api import ImplicitComponent, Group, IndepVarComp, BalanceComp, DirectSolver, BoundsEnforceLS, NewtonSolver, ArmijoGoldsteinLS
+from openmdao.api import ImplicitComponent, Group, IndepVarComp, BalanceComp, ExecComp, \
+                         DirectSolver, BoundsEnforceLS, NewtonSolver, ArmijoGoldsteinLS
 from openmdao.core.component import Component
 
 from pycycle.constants import AIR_MIX, AIR_FUEL_MIX
@@ -82,6 +83,9 @@ class MixedFlowTurbofan(Group):
         self.add_subsystem('lpt', Turbine(map_data=LPTmap, design=design, thermo_data=thermo_spec, elements=AIR_FUEL_MIX,
                                           map_extrap=True), promotes_inputs=[('Nmech','LP_Nmech')])
 
+        if not design:
+            self.add_subsystem('vabi', ExecComp('Fl1_area = Fl1_area_des*fact', Fl1_area_des={'units':'inch**2'}, Fl1_area={'units':'inch**2', 'value':164.}))
+
         self.add_subsystem('mixer', Mixer(design=design, designed_stream=1,
                                           Fl_I1_elements=AIR_FUEL_MIX, Fl_I2_elements=AIR_MIX))
 
@@ -151,6 +155,9 @@ class MixedFlowTurbofan(Group):
         self.connect('hpt.trq', 'hp_shaft.trq_1')
 
         self.connect('fc.Fl_O:stat:P', 'nozzle.Ps_exhaust')
+
+        if not design:
+            self.connect('vabi.Fl1_area', 'mixer.Fl_I1_stat_calc.area')
 
         ##########################################
         #  Balances to define cycle convergence
@@ -455,7 +462,8 @@ def connect_des_data(prob, des_pt_name, od_pt_names):
         prob.model.connect('DESIGN.bypass_duct.Fl_O:stat:area', pt+'.bypass_duct.area')
 
         prob.model.connect('DESIGN.mixer.Fl_O:stat:area', pt+'.mixer.area')
-        prob.model.connect('DESIGN.mixer.Fl_I1_calc:stat:area', pt+'.mixer.Fl_I1_stat_calc.area')
+        # prob.model.connect('DESIGN.mixer.Fl_I1_calc:stat:area', pt+'.mixer.Fl_I1_stat_calc.area')
+        prob.model.connect('DESIGN.mixer.Fl_I1_calc:stat:area', pt+'.vabi.Fl1_area_des')
 
         prob.model.connect('DESIGN.augmentor.Fl_O:stat:area', pt+'.augmentor.area')
 
@@ -511,6 +519,15 @@ if __name__ == "__main__":
     des_vars.add_output('OD:alts', val=od_alts, units='ft')
     des_vars.add_output('OD:MNs', val=od_MNs)
 
+
+    ##########################################
+    #  Control Variables
+    ##########################################]
+    # Note: note sure what the range should be here, but probably around .8-1.2 ish is a good start
+    des_vars.add_output('OD:vabi_control', val=np.ones(len(od_pts)))
+    des_vars.add_output('OD:hpc_control', val=np.zeros(len(od_pts)))
+    des_vars.add_output('OD:fan_control', val=np.zeros(len(od_pts)))
+
     connect_des_data(prob, 'DESIGN', od_pts)
 
     for i,pt in enumerate(od_pts):
@@ -518,6 +535,9 @@ if __name__ == "__main__":
 
         prob.model.connect('OD:alts', pt+'.fc.alt', src_indices=[i,])
         prob.model.connect('OD:MNs', pt+'.fc.MN', src_indices=[i,])
+        prob.model.connect('OD:vabi_control', pt+'.vabi.fact', src_indices=[i,])
+        prob.model.connect('OD:hpc_control', pt+'.hpc.map.alphaMap', src_indices=[i,])
+        prob.model.connect('OD:fan_control', pt+'.fan.map.alphaMap', src_indices=[i,])
 
         prob.model.connect('T4max', pt+'.far_core_bal.T_requested')
         prob.model.connect('T4maxab', pt+'.balance.rhs:FAR_ab')
@@ -571,7 +591,6 @@ if __name__ == "__main__":
     # prob.model.OD0.mixer.Fl_I1_stat_calc.list_inputs(print_arrays=True)
     # prob.model.OD0.mixer.Fl_I1_stat_calc.list_outputs()
     # exit()
-
 
 
     page_viewer(prob, 'DESIGN')
