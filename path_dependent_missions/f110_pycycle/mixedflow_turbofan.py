@@ -350,11 +350,19 @@ class MixedFlowTurbofan(Group):
 
 def print_perf(prob,ptName):
     ''' print out the performancs values'''
-    tmpl = 'BPR: {:5.3f}   W: {:5.3f}    Fnet: {:5.3f}    TSFC: {:5.3f}'
+    tmpl = 'BPR: {:5.3f}   W: {:5.3f}    Fnet: {:5.3f}    TSFC: {:5.3f}     VABI control: {:1.3f}'
+
+
+    try:
+        vabi = prob[ptName+'.vabi.fact'][0]
+    except KeyError: # the design case doesn't have that component
+        vabi = 1.
+
     data = [prob[ptName+'.balance.BPR'][0],
             prob[ptName+'.balance.W'][0],
             prob[ptName+'.perf.Fn'][0],
-            prob[ptName+'.perf.TSFC'][0]]
+            prob[ptName+'.perf.TSFC'][0],
+            vabi]
 
     print(tmpl.format(*data))
     print()

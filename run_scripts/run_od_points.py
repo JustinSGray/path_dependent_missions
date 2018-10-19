@@ -57,8 +57,8 @@ des_vars.add_output('OD:MNs', val=od_MNs)
 ##########################################]
 # Note: note sure what the range should be here, but probably around .8-1.2 ish is a good start
 des_vars.add_output('OD:vabi_fact', val=[1,1,1,.8, 1.2])
-des_vars.add_output('OD:hpc_control', val=[0,0,0,90,90])
-des_vars.add_output('OD:fan_control', val=[0,0,0,90,90])
+des_vars.add_output('OD:hpc_control', val=[0,0,0,0,0])
+des_vars.add_output('OD:fan_control', val=[0,0,0,0,0])
 
 mftf.connect_des_data(prob, 'DESIGN', od_pts)
 
