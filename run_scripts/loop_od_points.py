@@ -1,4 +1,5 @@
 from pprint import pprint as pp
+import numpy as np
 
 from openmdao.api import Problem, IndepVarComp
 
@@ -53,9 +54,35 @@ prob.model.add_subsystem('OD', mftf.MixedFlowTurbofan(design=False))
 
 prob.model.connect('OD:alt', 'OD.fc.alt')
 prob.model.connect('OD:MN', 'OD.fc.MN')
+prob.model.connect('OD:vabi_control', 'OD.vabi.fact')
+prob.model.connect('OD:hpc_control', 'OD.hpc.map.alphaMap')
+prob.model.connect('OD:fan_control', 'OD.fan.map.alphaMap')
 
 prob.model.connect('T4max', 'OD.far_core_bal.T_requested')
 prob.model.connect('T4maxab', 'OD.balance.rhs:FAR_ab')
+
+OD_CASES = [
+    [(0.001, 0.0, 0.0, 0.0, 1.0),(.2, 0.0, 0.0, 0.0, 1.0)],
+    [(0.001, 1000., 0.0, 0.0, 1.0),(.2, 1000., 0.0, 0.0, 1.0)],
+    [(0.001, 5000., 0.0, 0.0, 1.0),(.2, 5000., 0.0, 0.0, 1.0)],
+    [(0.001, 10000., 0.0, 0.0, 1.0),(.2, 10000., 0.0, 0.0, 1.0)],
+    [(0.001, 15000., 0.0, 0.0, 1.0),(.2, 15000., 0.0, 0.0, 1.0)],
+    [(0.001, 17000., 0.0, 0.0, 1.0),(.2, 17000., 0.0, 0.0, 1.0)],
+    [(0.2, 20000., 0.0, 0.0, 1.0),(.4, 20000., 0.0, 0.0, 1.0),(.6, 20000, 0.0, 0.0, 1.0), (.8, 20000, 0.0, 0.0, 1.0)],
+    # [(0.2, 25000.),(.4, 25000.),(.6, 25000.), (.8, 25000.),(1.0, 25000.), (1.2, 25000.), (.9, 25000), (.7, 25000), (.5, 25000)],
+    # [(.6, 30000), (.8, 30000),(1.0, 30000), (1.2, 30000), (1.4, 30000), (1.6, 30000), (1.3, 30000), (.9, 30000), (.7, 30000), (.5, 30000)],
+    # [(.6, 40000), (.8, 40000),(1.0, 40000), (1.2, 40000), (1.4, 40000), (1.6, 40000), (1.3, 40000), (1.1, 40000), (.9, 40000), (.7, 40000), (.5, 40000)],
+]
+
+NUM_OD_CASES = np.sum([len(row) for row in OD_CASES])
+
+##########################################
+#  Control Variables
+##########################################]
+# Note: note sure what the range should be here, but probably around .8-1.2 ish is a good start
+des_vars.add_output('OD:vabi_control', val=1)
+des_vars.add_output('OD:hpc_control', val=0)
+des_vars.add_output('OD:fan_control', val=0)
 
 
 # setup problem
@@ -98,18 +125,7 @@ prob.set_solver_print(level=2, depth=1)
 #     [(0.001, 10000.),(.2, 10000.),(.4, 10000.),(.6, 10000.),(.8, 10000.),(1.0, 10000.),(1.2, 10000.),(1.4, 10000.),(1.6, 10000.),],
 # ]
 
-OD_CASES = [
-    [(0.001, 0.0),(.2, 0.0)],
-    [(0.001, 1000.),(.2, 1000.)],
-    [(0.001, 5000.),(.2, 5000.)],
-    [(0.001, 10000.),(.2, 10000.)],
-    [(0.001, 15000.),(.2, 15000.)],
-    [(0.001, 17000.),(.2, 17000.)],
-    [(0.2, 20000.),(.4, 20000.),(.6, 20000), (.8, 20000)],
-    # [(0.2, 25000.),(.4, 25000.),(.6, 25000.), (.8, 25000.),(1.0, 25000.), (1.2, 25000.), (.9, 25000), (.7, 25000), (.5, 25000)],
-    # [(.6, 30000), (.8, 30000),(1.0, 30000), (1.2, 30000), (1.4, 30000), (1.6, 30000), (1.3, 30000), (.9, 30000), (.7, 30000), (.5, 30000)],
-    # [(.6, 40000), (.8, 40000),(1.0, 40000), (1.2, 40000), (1.4, 40000), (1.6, 40000), (1.3, 40000), (1.1, 40000), (.9, 40000), (.7, 40000), (.5, 40000)],
-]
+
 
 
 
@@ -137,9 +153,12 @@ guess_vars = ['OD.far_core_bal.FAR', 'OD.balance.FAR_ab', 'OD.balance.BPR', 'OD.
               'OD.fc.balance.Pt', 'OD.fc.balance.Tt', 'OD.mixer.balance.P_tot', 'OD.hpt.PR', 'OD.lpt.PR', 'OD.fan.map.RlineMap', 'OD.hpc.map.RlineMap']
 
 for i, row in enumerate(OD_CASES):
-    for j, (MN, alt) in enumerate(row):
+    for j, (MN, alt, hpc_control, fan_control, vabi_control) in enumerate(row):
         prob['OD:MN'] = MN
         prob['OD:alt'] = alt
+        prob['OD:hpc_control'] = hpc_control
+        prob['OD:fan_control'] = fan_control
+        prob['OD:vabi_control'] = vabi_control
 
         print('\n\n\n\n### MN: {} alt {}'.format(MN, alt))
         prob.run_model()
